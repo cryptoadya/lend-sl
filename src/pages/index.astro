@@ -1,0 +1,24 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Header from "../components/Header.astro";
+import Hero from "../components/Hero.astro";
+import ServicesGrid from "../components/ServicesGrid.astro";
+import ProcessSteps from "../components/ProcessSteps.astro";
+import ContactCTA from "../components/ContactCTA.astro";
+import Footer from "../components/Footer.astro";
+
+const title = "S-Line Seniorenhilfe UG | Unterstützung im Alltag in Märkisch-Oderland";
+const description =
+  "Persönliche Unterstützung im Alltag in Märkisch-Oderland. Zuverlässige Hilfe im häuslichen Umfeld. Jetzt Kontakt aufnehmen.";
+---
+
+<BaseLayout title={title} description={description}>
+  <Header />
+  <main id="top">
+    <Hero />
+    <ServicesGrid />
+    <ProcessSteps />
+    <ContactCTA />
+  </main>
+  <Footer />
+</BaseLayout>

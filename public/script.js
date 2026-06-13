@@ -7,6 +7,7 @@ menuToggle?.addEventListener("click", () => {
   const isOpen = nav.classList.toggle("is-open");
   document.body.classList.toggle("nav-open", isOpen);
   menuToggle.setAttribute("aria-expanded", String(isOpen));
+  menuToggle.setAttribute("aria-label", isOpen ? "Menü schließen" : "Menü öffnen");
 });
 
 nav?.addEventListener("click", (event) => {
@@ -14,14 +15,20 @@ nav?.addEventListener("click", (event) => {
     nav.classList.remove("is-open");
     document.body.classList.remove("nav-open");
     menuToggle?.setAttribute("aria-expanded", "false");
+    menuToggle?.setAttribute("aria-label", "Menü öffnen");
   }
 });
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
+    const wasOpen = nav?.classList.contains("is-open");
     nav?.classList.remove("is-open");
     document.body.classList.remove("nav-open");
     menuToggle?.setAttribute("aria-expanded", "false");
+    menuToggle?.setAttribute("aria-label", "Menü öffnen");
+    if (wasOpen) {
+      menuToggle?.focus();
+    }
   }
 });
 

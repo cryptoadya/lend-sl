@@ -6,13 +6,33 @@ import ServicesGrid from "../components/ServicesGrid.astro";
 import ProcessSteps from "../components/ProcessSteps.astro";
 import ContactCTA from "../components/ContactCTA.astro";
 import Footer from "../components/Footer.astro";
+import JsonLd from "../components/JsonLd.astro";
 
 const title = "S-Line Seniorenhilfe UG | Unterstützung im Alltag in Märkisch-Oderland";
 const description =
   "Persönliche Unterstützung im Alltag in Märkisch-Oderland. Zuverlässige Hilfe im häuslichen Umfeld. Jetzt Kontakt aufnehmen.";
+const site = Astro.site ?? new URL("https://example.com");
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "@id": new URL("/#localbusiness", site).toString(),
+  name: "S-Line Seniorenhilfe UG",
+  url: new URL("/", site).toString(),
+  telephone: "+491732126091",
+  email: "adelmarkt2015@gmail.com",
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "Petershagener Chaussee 34",
+    postalCode: "15345",
+    addressLocality: "Eggersdorf",
+    addressCountry: "DE",
+  },
+  areaServed: "Märkisch-Oderland",
+};
 ---
 
-<BaseLayout title={title} description={description}>
+<BaseLayout title={title} description={description} path="/">
+  <JsonLd slot="head" data={jsonLd} />
   <Header />
   <main id="top">
     <Hero />

@@ -1,0 +1,68 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+
+const title = "Datenschutz | S-Line Seniorenhilfe UG";
+const description = "Datenschutzhinweise der S-Line Seniorenhilfe UG.";
+---
+
+<BaseLayout title={title} description={description} path="/datenschutz">
+  <Header />
+  <main class="legal-page section">
+    <h1>Datenschutzerklärung</h1>
+    <p class="legal-review-note">Diese Seite erfordert eine finale rechtliche Prüfung.</p>
+
+    <section aria-labelledby="responsible-title">
+      <h2 id="responsible-title">Verantwortliche Stelle</h2>
+      <p>
+        S-Line Seniorenhilfe UG<br />
+        Petershagener Chaussee 34<br />
+        15345 Eggersdorf<br />
+        Telefon: <a href="tel:+491732126091">0173 2126091</a><br />
+        E-Mail: <a href="mailto:adelmarkt2015@gmail.com">adelmarkt2015@gmail.com</a>
+      </p>
+    </section>
+
+    <section aria-labelledby="contact-form-title">
+      <h2 id="contact-form-title">Kontaktaufnahme</h2>
+      <p>
+        Wenn Sie uns über das Kontaktformular, per Telefon oder per E-Mail kontaktieren,
+        verarbeiten wir die von Ihnen übermittelten Angaben zur Bearbeitung Ihrer Anfrage.
+      </p>
+      <p>
+        TODO: Rechtsgrundlage, Speicherdauer und Empfänger final rechtlich prüfen und ergänzen.
+      </p>
+    </section>
+
+    <section aria-labelledby="hosting-title">
+      <h2 id="hosting-title">Hosting und technische Bereitstellung</h2>
+      <p>
+        Beim Aufruf dieser Website können technisch notwendige Zugriffsdaten verarbeitet werden,
+        damit die Website ausgeliefert und sicher betrieben werden kann.
+      </p>
+      <p>
+        TODO: Hosting-Anbieter, Serverstandorte, Logfile-Speicherdauer und Auftragsverarbeitung
+        final rechtlich prüfen und ergänzen.
+      </p>
+    </section>
+
+    <section aria-labelledby="cookies-title">
+      <h2 id="cookies-title">Cookies, Tracking und externe Dienste</h2>
+      <p>
+        Diese Website bindet keine Tracking-Skripte, keine Analytics-Dienste, keine Google Fonts,
+        keine Google Maps und keine Drittanbieter-Embeds ein.
+      </p>
+      <p>TODO: Diese Aussage vor Veröffentlichung final technisch und rechtlich prüfen.</p>
+    </section>
+
+    <section aria-labelledby="rights-title">
+      <h2 id="rights-title">Ihre Rechte</h2>
+      <p>
+        TODO: Betroffenenrechte nach DSGVO, Beschwerderecht bei einer Aufsichtsbehörde und
+        Kontaktweg für Datenschutzanfragen final rechtlich prüfen und ergänzen.
+      </p>
+    </section>
+  </main>
+  <Footer />
+</BaseLayout>

@@ -1,0 +1,40 @@
+---
+interface Props {
+  title: string;
+  description: string;
+  path?: string;
+  image?: string;
+  type?: "website" | "article";
+  noindex?: boolean;
+}
+
+const {
+  title,
+  description,
+  path = Astro.url.pathname,
+  image = "/assets/hero-balcony-support.png",
+  type = "website",
+  noindex = false,
+} = Astro.props;
+
+const site = Astro.site ?? new URL("https://example.com");
+const canonical = new URL(path, site).toString();
+const ogImage = new URL(image, site).toString();
+---
+
+<title>{title}</title>
+<meta name="description" content={description} />
+{noindex && <meta name="robots" content="noindex, nofollow" />}
+<link rel="canonical" href={canonical} />
+<link rel="sitemap" href="/sitemap-index.xml" />
+<meta property="og:locale" content="de_DE" />
+<meta property="og:type" content={type} />
+<meta property="og:site_name" content="S-Line Seniorenhilfe UG" />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+<meta property="og:image" content={ogImage} />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImage} />

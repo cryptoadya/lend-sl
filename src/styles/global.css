@@ -837,6 +837,50 @@ h3 {
   font-size: 0.9rem;
 }
 
+.privacy-check a {
+  color: var(--teal);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.legal-page {
+  max-width: 860px;
+  padding: 70px 0;
+}
+
+.legal-page h1 {
+  font-size: clamp(2.4rem, 7vw, 4rem);
+}
+
+.legal-page section {
+  margin-top: 34px;
+}
+
+.legal-page h2 {
+  font-family: inherit;
+  font-size: clamp(1.35rem, 4vw, 1.8rem);
+}
+
+.legal-page p,
+.legal-page li {
+  color: var(--muted);
+}
+
+.legal-page a {
+  color: var(--teal);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.legal-review-note {
+  padding: 16px 18px;
+  color: #5d4328;
+  background: var(--bg-warm);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-weight: 700;
+}
+
 .footer {
   display: grid;
   gap: 16px;

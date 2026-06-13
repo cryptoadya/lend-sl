@@ -6,10 +6,11 @@
   "scripts": {
     "dev": "ASTRO_TELEMETRY_DISABLED=1 astro dev",
     "build": "ASTRO_TELEMETRY_DISABLED=1 astro build",
+    "postbuild": "cp dist/sitemap-index.xml dist/sitemap.xml",
     "preview": "ASTRO_TELEMETRY_DISABLED=1 astro preview"
   },
   "dependencies": {
+    "@astrojs/sitemap": "^3.7.3",
     "astro": "^5.10.0"
-  },
-  "devDependencies": {}
+  }
 }

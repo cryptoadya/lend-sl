@@ -49,6 +49,14 @@ a {
   text-decoration: none;
 }
 
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(63, 125, 59, 0.5);
+  outline-offset: 4px;
+}
+
 button,
 input,
 textarea {
@@ -811,6 +819,11 @@ h3 {
   box-shadow: 0 0 0 4px rgba(8, 127, 118, 0.12);
 }
 
+.contact-form input:not([type="checkbox"]):focus-visible,
+.contact-form textarea:focus-visible {
+  outline: none;
+}
+
 .privacy-check {
   grid-template-columns: 22px 1fr;
   align-items: flex-start;
@@ -850,6 +863,8 @@ h3 {
 
 .legal-page h1 {
   font-size: clamp(2.4rem, 7vw, 4rem);
+  hyphens: auto;
+  overflow-wrap: break-word;
 }
 
 .legal-page section {
@@ -859,6 +874,7 @@ h3 {
 .legal-page h2 {
   font-family: inherit;
   font-size: clamp(1.35rem, 4vw, 1.8rem);
+  overflow-wrap: anywhere;
 }
 
 .legal-page p,
@@ -870,6 +886,7 @@ h3 {
   color: var(--teal);
   text-decoration: underline;
   text-underline-offset: 3px;
+  overflow-wrap: anywhere;
 }
 
 .legal-review-note {
@@ -1151,6 +1168,11 @@ h3 {
   .price-area,
   .contact {
     padding: 58px 0;
+  }
+
+  .legal-page h1 {
+    font-size: clamp(1.8rem, 7.5vw, 2.2rem);
+    line-height: 1.05;
   }
 
   .service-card,

@@ -16,7 +16,6 @@ test("the landing page follows the requested content structure", async () => {
   assert.match(hero, /S-Line Seniorenhilfe UG in Eggersdorf/);
   assert.match(hero, /Unverbindlich anfragen/);
   assert.match(hero, /Für wen wir da sind/);
-  assert.match(services, /Termine, Besorgungen, Erinnerungen/);
   assert.equal((process.match(/<article class="step">/g) ?? []).length, 3);
   assert.match(process, /Transparente Abrechnung nach tatsächlich geleisteter Zeit/);
   assert.match(contact, /Rufen Sie uns an, schreiben Sie uns oder nutzen Sie das Formular/);
@@ -49,6 +48,17 @@ test("benefit and service copy stays concrete without overpromising", async () =
   assert.match(hero, /Zeit zum Zuhören und für vertraute Alltagsmomente/);
   assert.match(hero, /Mehr Ruhe, wenn im Alltag Unterstützung gebraucht wird/);
   assert.equal((hero.match(/feste Ansprechperson/g) ?? []).length, 1);
-  assert.match(services, /Dabei können wir Sie im Alltag begleiten/);
-  assert.match(services, /vertraute Momente im Grünen gestalten/);
+  const expectedServiceCopy = [
+    "Unterstützung, die sich an Ihrem Alltag orientiert.",
+    "Zeit für Gespräche, gemeinsame Tagesstruktur und Hilfe bei kleinen Handgriffen.",
+    "Gemeinsam den Überblick behalten: Erinnerungen, Unterlagen und tägliche Abläufe sortieren.",
+    "Einfache Speisen zusammen vorbereiten und gewohnte Abläufe erhalten.",
+    "Pflanzen gießen, die Jahreszeiten erleben und Zeit im Grünen verbringen.",
+    "Falten, ordnen, gestalten oder einem vertrauten Hobby nachgehen.",
+    "Unterstützung beim Einkauf und Begleitung zu vereinbarten Arztterminen.",
+  ];
+
+  for (const copy of expectedServiceCopy) {
+    assert.ok(services.includes(copy), `missing service copy: ${copy}`);
+  }
 });

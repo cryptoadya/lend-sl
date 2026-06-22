@@ -27,8 +27,21 @@ test("card copy is at least 16px", () => {
 test("mobile footer links have a 44px touch target", () => {
   assert.match(
     css,
-    /@media\s*\(max-width:\s*520px\)[\s\S]*?\.footer-links a,\s*\.footer-legal a\s*\{[^}]*min-height:\s*44px/s,
+    /@media\s*\(max-width:\s*899px\)[\s\S]*?\.footer-contact a,\s*\.footer-legal a\s*\{[^}]*min-height:\s*44px/s,
   );
+});
+
+test("desktop footer uses three bounded semantic columns", () => {
+  const desktop = css.match(/@media\s*\(min-width:\s*900px\)\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+
+  assert.match(desktop, /\.footer\s*\{[^}]*grid-template-columns:\s*repeat\(3,/s);
+  assert.match(
+    desktop,
+    /\.footer\s*\{[^}]*padding-inline:\s*max\(20px,\s*calc\(\(100vw - var\(--max\)\) \/ 2\)\)/s,
+  );
+  assert.match(desktop, /\.footer-contact\s*\{[^}]*justify-self:\s*center/s);
+  assert.match(desktop, /\.footer-meta\s*\{[^}]*justify-self:\s*end[^}]*text-align:\s*right/s);
+  assert.doesNotMatch(desktop, /grid-template-columns:\s*1fr auto auto auto/);
 });
 
 test("desktop grids match the four benefits and three process steps", () => {
@@ -41,7 +54,7 @@ test("desktop grids match the four benefits and three process steps", () => {
   assert.match(desktop, /\.step-list\s*\{[^}]*grid-template-columns:\s*repeat\(3,/s);
 });
 
-test("desktop hero scales the long local headline to its column", () => {
+test("desktop hero scales the headline to its column", () => {
   const desktop = css.match(/@media\s*\(min-width:\s*900px\)\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
 
   assert.match(
@@ -50,7 +63,7 @@ test("desktop hero scales the long local headline to its column", () => {
   );
 });
 
-test("mobile hero keeps the long headline compact without shrinking buttons", () => {
+test("mobile hero keeps the headline compact without shrinking buttons", () => {
   const mobile = css.match(/@media\s*\(max-width:\s*619px\)\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
 
   assert.match(mobile, /\.hero\s*\{[^}]*gap:\s*24px[^}]*padding:\s*34px 0 24px/s);

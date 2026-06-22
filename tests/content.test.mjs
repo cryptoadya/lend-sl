@@ -6,19 +6,18 @@ const readProjectFile = (path) =>
   readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
 test("the landing page follows the requested content structure", async () => {
-  const [index, hero, process, contact] = await Promise.all([
+  const [index, hero, process, contact, footer] = await Promise.all([
     readProjectFile("src/pages/index.astro"),
     readProjectFile("src/components/Hero.astro"),
     readProjectFile("src/components/ProcessSteps.astro"),
     readProjectFile("src/components/ContactCTA.astro"),
+    readProjectFile("src/components/Footer.astro"),
   ]);
 
   assert.match(index, /Anerkannte Alltagshilfe in Märkisch-Oderland/);
-  assert.match(hero, /S-Line Seniorenhilfe UG/);
-  assert.match(
-    hero,
-    /Unterstützung im Alltag für Menschen mit Pflegegrad in Märkisch-Oderland/,
-  );
+  assert.match(hero, /<p class="hero-headline">Anerkannte Alltagshilfe in Märkisch-Oderland<\/p>/);
+  assert.match(hero, /<h1>Unterstützung für Menschen mit Pflegegrad<\/h1>/);
+  assert.doesNotMatch(hero, /Unterstützung im Alltag für Menschen mit Pflegegrad in Märkisch-Oderland/);
   assert.match(hero, /Vom LASV Brandenburg nach § 45a SGB XI anerkannt/);
   assert.match(hero, /Verlässliche Unterstützung im Alltag/);
   assert.match(hero, /Unser Angebot richtet sich an Menschen mit Pflegegrad/);
@@ -44,6 +43,13 @@ test("the landing page follows the requested content structure", async () => {
   );
   assert.match(contact, /Wir melden uns persönlich bei Ihnen/);
   assert.match(contact, /Unverbindlich anfragen/);
+  assert.match(footer, /<div class="footer-contact">/);
+  assert.match(
+    footer,
+    /<div class="footer-meta">[\s\S]*<div class="footer-legal">[\s\S]*Impressum[\s\S]*Datenschutz[\s\S]*© 2026 S-Line Seniorenhilfe UG[\s\S]*<\/div>\s*<\/footer>/,
+  );
+  assert.doesNotMatch(footer, /footer-links/);
+  assert.doesNotMatch(footer, /<\/div>\s*<p>© 2026 S-Line Seniorenhilfe UG<\/p>\s*<\/footer>/);
 });
 
 test("the contact form requires a phone number or email address", async () => {

@@ -920,10 +920,16 @@ h3 {
 }
 
 .footer-brand,
-.footer-links,
-.footer-legal {
+.footer-contact,
+.footer-legal,
+.footer-meta {
   display: grid;
   gap: 5px;
+}
+
+.footer-contact a,
+.footer-legal a {
+  width: fit-content;
 }
 
 .footer span,
@@ -1090,8 +1096,25 @@ h3 {
   }
 
   .footer {
-    grid-template-columns: 1fr auto auto auto;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(32px, 5vw, 72px);
+    padding-inline: max(20px, calc((100vw - var(--max)) / 2));
     align-items: center;
+  }
+
+  .footer-contact {
+    justify-self: center;
+  }
+
+  .footer-meta {
+    justify-self: end;
+    text-align: right;
+  }
+
+  .footer-legal {
+    display: flex;
+    justify-content: flex-end;
+    gap: 18px;
   }
 }
 
@@ -1136,6 +1159,23 @@ h3 {
 
   .hero-media {
     margin-top: 4px;
+  }
+
+  .footer-contact a,
+  .footer-legal a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .footer-meta {
+    gap: 4px;
+  }
+
+  .footer-legal {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 18px;
   }
 }
 
@@ -1196,13 +1236,6 @@ h3 {
   .service-card,
   .step {
     padding: 24px;
-  }
-
-  .footer-links a,
-  .footer-legal a {
-    display: flex;
-    align-items: center;
-    min-height: 44px;
   }
 }
 

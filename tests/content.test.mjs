@@ -6,19 +6,44 @@ const readProjectFile = (path) =>
   readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
 test("the landing page follows the requested content structure", async () => {
-  const [hero, services, process, contact] = await Promise.all([
+  const [index, hero, process, contact] = await Promise.all([
+    readProjectFile("src/pages/index.astro"),
     readProjectFile("src/components/Hero.astro"),
-    readProjectFile("src/components/ServicesGrid.astro"),
     readProjectFile("src/components/ProcessSteps.astro"),
     readProjectFile("src/components/ContactCTA.astro"),
   ]);
 
-  assert.match(hero, /S-Line Seniorenhilfe UG in Eggersdorf/);
+  assert.match(index, /Anerkannte Alltagshilfe in Märkisch-Oderland/);
+  assert.match(hero, /S-Line Seniorenhilfe UG/);
+  assert.match(
+    hero,
+    /Unterstützung im Alltag für Menschen mit Pflegegrad in Märkisch-Oderland/,
+  );
+  assert.match(hero, /Vom LASV Brandenburg nach § 45a SGB XI anerkannt/);
+  assert.match(hero, /Verlässliche Unterstützung im Alltag/);
+  assert.match(hero, /Unser Angebot richtet sich an Menschen mit Pflegegrad/);
   assert.match(hero, /Unverbindlich anfragen/);
-  assert.match(hero, /Für wen wir da sind/);
   assert.equal((process.match(/<article class="step">/g) ?? []).length, 3);
-  assert.match(process, /Transparente Abrechnung nach tatsächlich geleisteter Zeit/);
-  assert.match(contact, /Rufen Sie uns an, schreiben Sie uns oder nutzen Sie das Formular/);
+  assert.match(process, /So starten wir/);
+  assert.match(process, /Einsatz vereinbaren/);
+  assert.match(
+    process,
+    /Wir vereinbaren passende Zeiten und besprechen, was Ihnen wichtig ist/,
+  );
+  assert.match(process, /35,00 €/);
+  assert.match(process, /Entlastungsbetrag nach § 45b SGB XI/);
+  assert.match(
+    process,
+    /prüfen wir gemeinsam, ob eine direkte Abrechnung mit Ihrer Pflegekasse möglich ist/,
+  );
+  assert.match(process, /Abrechnung nach tatsächlich geleisteter Zeit/);
+  assert.match(contact, /Persönlich Kontakt aufnehmen/);
+  assert.match(
+    contact,
+    /Sie möchten wissen, ob unsere Unterstützung zu Ihrer Situation passt/,
+  );
+  assert.match(contact, /Wir melden uns persönlich bei Ihnen/);
+  assert.match(contact, /Unverbindlich anfragen/);
 });
 
 test("the contact form requires a phone number or email address", async () => {
@@ -45,18 +70,24 @@ test("benefit and service copy stays concrete without overpromising", async () =
     readProjectFile("src/components/ServicesGrid.astro"),
   ]);
 
-  assert.match(hero, /Zeit zum Zuhören und für vertraute Alltagsmomente/);
-  assert.match(hero, /Mehr Ruhe, wenn im Alltag Unterstützung gebraucht wird/);
-  assert.equal((hero.match(/feste Ansprechperson/g) ?? []).length, 1);
+  assert.match(
+    hero,
+    /nach Ihren Möglichkeiten\s+und Gewohnheiten zu gestalten/,
+  );
+  assert.match(hero, /Gleichzeitig entlasten wir Ihre Angehörigen/);
+  assert.equal((hero.match(/Vom LASV Brandenburg/g) ?? []).length, 1);
   const expectedServiceCopy = [
-    "Unterstützung, die sich an Ihrem Alltag orientiert.",
-    "Zeit für Gespräche, gemeinsame Tagesstruktur und Hilfe bei kleinen Handgriffen.",
-    "Gemeinsam den Überblick behalten: Erinnerungen, Unterlagen und tägliche Abläufe sortieren.",
-    "Einfache Speisen zusammen vorbereiten und gewohnte Abläufe erhalten.",
-    "Pflanzen gießen, die Jahreszeiten erleben und Zeit im Grünen verbringen.",
-    "Falten, ordnen, gestalten oder einem vertrauten Hobby nachgehen.",
-    "Unterstützung beim Einkauf und Begleitung zu vereinbarten Arztterminen.",
+    "Praktische Hilfe und persönliche Begleitung, passend zu Ihrem Alltag.",
+    "Zeit für Gespräche, eine verlässliche Tagesstruktur und Hilfe bei kleinen Aufgaben zu Hause.",
+    "Erinnerungen, Unterlagen und tägliche Abläufe übersichtlich ordnen.",
+    "Einfache Speisen zubereiten und vertraute Gewohnheiten erhalten.",
+    "Pflanzen pflegen, leichte Arbeiten im Garten erledigen und Zeit im Grünen verbringen.",
+    "Bei einfachen, vertrauten Handgriffen unterstützen, kleine Dinge ordnen, befestigen oder gestalten.",
+    "Beim Einkauf unterstützen und zu vereinbarten Arztterminen begleiten.",
   ];
+
+  assert.match(services, /Garten und Pflanzen/);
+  assert.match(services, /Kleine handwerkliche Tätigkeiten/);
 
   for (const copy of expectedServiceCopy) {
     assert.ok(services.includes(copy), `missing service copy: ${copy}`);

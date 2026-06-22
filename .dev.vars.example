@@ -1,0 +1,6 @@
+# Local development mock configuration.
+# Copy this file to .dev.vars and adjust values for your local setup.
+# Never commit .dev.vars to version control.
+
+CONTACT_MODE=mock
+CONTACT_TO=info@s-line-seniorenhilfe.de

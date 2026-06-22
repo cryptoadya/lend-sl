@@ -46,15 +46,42 @@ const clearReturnContactError = () => {
 phone?.addEventListener("input", clearReturnContactError);
 email?.addEventListener("input", clearReturnContactError);
 
-contactForm?.addEventListener("submit", (event) => {
+let contactSubmitting = false;
+
+contactForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
+
+  // Prevent double-submit
+  if (contactSubmitting) return;
+
   const formData = new FormData(contactForm);
   const name = String(formData.get("name") || "").trim();
   const phoneValue = String(formData.get("phone") || "").trim();
   const emailValue = String(formData.get("email") || "").trim();
   const message = String(formData.get("message") || "").trim();
-  const privacy = formData.get("privacy") ? "ja" : "nein";
+  const privacyChecked = Boolean(formData.get("privacy"));
+  const website = String(formData.get("website") || "").trim();
 
+  const statusEl = contactForm.querySelector("[data-contact-status]");
+  const submitBtn = contactForm.querySelector("[type='submit']");
+
+  const showStatus = (msg, isError = false) => {
+    if (!statusEl) return;
+    statusEl.textContent = msg;
+    statusEl.hidden = false;
+    if (isError) {
+      statusEl.focus();
+    }
+  };
+
+  const clearStatus = () => {
+    if (statusEl) {
+      statusEl.textContent = "";
+      statusEl.hidden = true;
+    }
+  };
+
+  // Client-side: phone or email required
   if (!phoneValue && !emailValue) {
     const errorMessage = "Bitte geben Sie eine Telefonnummer oder E-Mail-Adresse an.";
     phone.setCustomValidity(errorMessage);
@@ -65,23 +92,89 @@ contactForm?.addEventListener("submit", (event) => {
     return;
   }
 
+  // Client-side: name required
+  if (!name) {
+    const nameInput = contactForm.querySelector('[name="name"]');
+    nameInput?.setCustomValidity("Bitte geben Sie Ihren Namen an.");
+    nameInput?.reportValidity();
+    return;
+  }
+
+  // Client-side: message required
+  if (!message) {
+    const messageInput = contactForm.querySelector('[name="message"]');
+    messageInput?.setCustomValidity("Bitte geben Sie eine Nachricht ein.");
+    messageInput?.reportValidity();
+    return;
+  }
+
+  // Client-side: privacy required
+  if (!privacyChecked) {
+    const privacyInput = contactForm.querySelector('[name="privacy"]');
+    privacyInput?.setCustomValidity("Bitte bestätigen Sie die Datenschutzerklärung.");
+    privacyInput?.reportValidity();
+    return;
+  }
+
   clearReturnContactError();
+  clearStatus();
 
-  const subject = encodeURIComponent(`Kontaktanfrage von ${name || "der Website"}`);
-  const body = encodeURIComponent(
-    [
-      `Name: ${name}`,
-      `Telefon: ${phoneValue}`,
-      `E-Mail: ${emailValue}`,
-      `Datenschutz bestätigt: ${privacy}`,
-      "",
-      "Nachricht:",
-      message,
-    ].join("\n"),
-  );
+  // Disable button and guard against double-submit
+  contactSubmitting = true;
+  if (submitBtn) {
+    submitBtn.disabled = true;
+  }
 
-  window.location.href = `mailto:adelmarkt2015@gmail.com?subject=${subject}&body=${body}`;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+  try {
+    const response = await fetch("/api/contact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        phone: phoneValue,
+        email: emailValue,
+        message,
+        privacy: privacyChecked,
+        website,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      data = null;
+    }
+
+    if (response.ok && data?.ok) {
+      showStatus(data.message || "Vielen Dank. Wir melden uns zeitnah bei Ihnen.");
+      contactForm.reset();
+    } else {
+      showStatus(
+        "Ihre Anfrage konnte gerade nicht gesendet werden. Bitte versuchen Sie es später erneut oder rufen Sie uns an.",
+        true,
+      );
+    }
+  } catch {
+    clearTimeout(timeoutId);
+    showStatus(
+      "Ihre Anfrage konnte gerade nicht gesendet werden. Bitte versuchen Sie es später erneut oder rufen Sie uns an.",
+      true,
+    );
+  } finally {
+    contactSubmitting = false;
+    if (submitBtn) {
+      submitBtn.disabled = false;
+    }
+  }
 });
+
 
 const observer = new IntersectionObserver(
   ([entry]) => {

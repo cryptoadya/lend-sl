@@ -2,7 +2,7 @@
   <div class="contact-copy">
     <h2 id="contact-title">Kontakt aufnehmen</h2>
     <p>
-      Schreiben Sie kurz, wobei Unterstützung gewünscht ist. Wir melden uns persönlich zurück.
+      Rufen Sie uns an, schreiben Sie uns oder nutzen Sie das Formular. Wir melden uns persönlich zurück.
     </p>
     <div class="contact-list">
       <a href="tel:+491732126091">
@@ -26,19 +26,22 @@
     </figure>
   </div>
   <form class="contact-form" data-contact-form>
-    <label>
+    <label class="form-field-full">
       Name
       <input name="name" autocomplete="name" required />
     </label>
     <label>
       Telefonnummer
-      <input name="phone" autocomplete="tel" />
+      <input name="phone" type="tel" autocomplete="tel" aria-describedby="contact-return-error" />
     </label>
     <label>
       E-Mail
-      <input name="email" type="email" autocomplete="email" />
+      <input name="email" type="email" autocomplete="email" aria-describedby="contact-return-error" />
     </label>
-    <label>
+    <p class="form-error" id="contact-return-error" data-contact-error role="alert" hidden>
+      Bitte geben Sie eine Telefonnummer oder E-Mail-Adresse an, damit wir Sie erreichen können.
+    </p>
+    <label class="form-field-full">
       Nachricht
       <textarea name="message" rows="5" required></textarea>
     </label>
@@ -50,7 +53,7 @@
       </span>
     </label>
     <button class="btn btn-primary" type="submit">
-      Unverbindlich Kontakt aufnehmen
+      Unverbindlich anfragen
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12 20 4l-7 16-2-7-7-1Z" /></svg>
     </button>
     <p class="form-note">Das Formular öffnet Ihr E-Mail-Programm mit der vorbereiteten Nachricht.</p>

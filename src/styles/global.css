@@ -856,6 +856,13 @@ h3 {
   font-size: 0.9rem;
 }
 
+.form-error {
+  margin: -4px 0 0;
+  color: #8b2f24;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
 .privacy-check a {
   color: var(--teal);
   text-decoration: underline;
@@ -974,9 +981,9 @@ h3 {
     padding: 24px;
   }
 
-  .contact-form label:nth-child(3),
-  .contact-form label:nth-child(4),
-  .contact-form label:nth-child(5),
+  .contact-form .form-field-full,
+  .contact-form .privacy-check,
+  .contact-form .form-error,
   .contact-form button,
   .contact-form .form-note {
     grid-column: 1 / -1;
@@ -1064,7 +1071,7 @@ h3 {
   }
 
   .step-list {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .step:not(:last-child)::after {

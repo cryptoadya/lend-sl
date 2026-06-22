@@ -2,6 +2,9 @@ const header = document.querySelector("[data-header]");
 const menuToggle = document.querySelector(".menu-toggle");
 const nav = document.querySelector("#primary-nav");
 const contactForm = document.querySelector("[data-contact-form]");
+const phone = contactForm?.querySelector('[name="phone"]');
+const email = contactForm?.querySelector('[name="email"]');
+const contactError = contactForm?.querySelector("[data-contact-error]");
 
 menuToggle?.addEventListener("click", () => {
   const isOpen = nav.classList.toggle("is-open");
@@ -32,21 +35,44 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
+const clearReturnContactError = () => {
+  phone?.setCustomValidity("");
+  email?.setCustomValidity("");
+  if (contactError) {
+    contactError.hidden = true;
+  }
+};
+
+phone?.addEventListener("input", clearReturnContactError);
+email?.addEventListener("input", clearReturnContactError);
+
 contactForm?.addEventListener("submit", (event) => {
   event.preventDefault();
   const formData = new FormData(contactForm);
   const name = String(formData.get("name") || "").trim();
-  const phone = String(formData.get("phone") || "").trim();
-  const email = String(formData.get("email") || "").trim();
+  const phoneValue = String(formData.get("phone") || "").trim();
+  const emailValue = String(formData.get("email") || "").trim();
   const message = String(formData.get("message") || "").trim();
   const privacy = formData.get("privacy") ? "ja" : "nein";
+
+  if (!phoneValue && !emailValue) {
+    const errorMessage = "Bitte geben Sie eine Telefonnummer oder E-Mail-Adresse an.";
+    phone.setCustomValidity(errorMessage);
+    email.setCustomValidity(errorMessage);
+    contactError.hidden = false;
+    phone.focus();
+    phone.reportValidity();
+    return;
+  }
+
+  clearReturnContactError();
 
   const subject = encodeURIComponent(`Kontaktanfrage von ${name || "der Website"}`);
   const body = encodeURIComponent(
     [
       `Name: ${name}`,
-      `Telefon: ${phone}`,
-      `E-Mail: ${email}`,
+      `Telefon: ${phoneValue}`,
+      `E-Mail: ${emailValue}`,
       `Datenschutz bestätigt: ${privacy}`,
       "",
       "Nachricht:",

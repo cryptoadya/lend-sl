@@ -40,3 +40,14 @@ test("desktop grids match the four benefits and three process steps", () => {
   );
   assert.match(desktop, /\.step-list\s*\{[^}]*grid-template-columns:\s*repeat\(3,/s);
 });
+
+test("tablet contact form uses semantic full-width rows", () => {
+  const tablet = css.match(/@media\s*\(min-width:\s*620px\)\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+
+  assert.match(
+    tablet,
+    /\.contact-form \.form-field-full,\s*\.contact-form \.privacy-check,\s*\.contact-form \.form-error,/s,
+  );
+  assert.match(tablet, /grid-column:\s*1\s*\/\s*-1/);
+  assert.doesNotMatch(tablet, /\.contact-form label:nth-child/);
+});

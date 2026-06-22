@@ -41,6 +41,15 @@ test("desktop grids match the four benefits and three process steps", () => {
   assert.match(desktop, /\.step-list\s*\{[^}]*grid-template-columns:\s*repeat\(3,/s);
 });
 
+test("desktop hero scales the long local headline to its column", () => {
+  const desktop = css.match(/@media\s*\(min-width:\s*900px\)\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+
+  assert.match(
+    desktop,
+    /\.hero h1\s*\{[^}]*font-size:\s*clamp\(3rem,\s*4vw,\s*3\.6rem\)/s,
+  );
+});
+
 test("tablet contact form uses semantic full-width rows", () => {
   const tablet = css.match(/@media\s*\(min-width:\s*620px\)\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
 

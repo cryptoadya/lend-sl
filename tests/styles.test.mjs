@@ -30,3 +30,13 @@ test("mobile footer links have a 44px touch target", () => {
     /@media\s*\(max-width:\s*520px\)[\s\S]*?\.footer-links a,\s*\.footer-legal a\s*\{[^}]*min-height:\s*44px/s,
   );
 });
+
+test("desktop grids match the four benefits and three process steps", () => {
+  const desktop = css.match(/@media\s*\(min-width:\s*900px\)\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+
+  assert.match(
+    desktop,
+    /\.benefit-strip-inner\s*\{[^}]*grid-template-columns:\s*repeat\(4,/s,
+  );
+  assert.match(desktop, /\.step-list\s*\{[^}]*grid-template-columns:\s*repeat\(3,/s);
+});

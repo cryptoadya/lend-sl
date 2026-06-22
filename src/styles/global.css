@@ -1206,6 +1206,44 @@ h3 {
   }
 }
 
+@media (max-width: 619px) {
+  .hero {
+    gap: 24px;
+    padding: 34px 0 24px;
+  }
+
+  .hero-copy > p {
+    margin-bottom: 20px;
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+
+  .hero-headline {
+    margin-bottom: 10px;
+    font-size: 0.92rem;
+    line-height: 1.25;
+  }
+
+  .hero h1 {
+    max-width: 100%;
+    margin-bottom: 12px;
+    font-size: clamp(2.35rem, 10vw, 2.8rem);
+    line-height: 1.02;
+    letter-spacing: -0.01em;
+  }
+
+  .hero-copy > .hero-script {
+    margin: 0 0 16px;
+    font-size: clamp(1.85rem, 8vw, 2.3rem);
+    line-height: 1.08;
+  }
+
+  .hero-actions {
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+}
+
 @media (min-width: 1100px) {
   .site-header {
     padding-inline: max(48px, calc((100vw - var(--max)) / 2));

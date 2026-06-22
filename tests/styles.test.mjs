@@ -50,6 +50,22 @@ test("desktop hero scales the long local headline to its column", () => {
   );
 });
 
+test("mobile hero keeps the long headline compact without shrinking buttons", () => {
+  const mobile = css.match(/@media\s*\(max-width:\s*619px\)\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+
+  assert.match(mobile, /\.hero\s*\{[^}]*gap:\s*24px[^}]*padding:\s*34px 0 24px/s);
+  assert.match(mobile, /\.hero-headline\s*\{[^}]*font-size:\s*0\.92rem/s);
+  assert.match(
+    mobile,
+    /\.hero h1\s*\{[^}]*font-size:\s*clamp\(2\.35rem,\s*10vw,\s*2\.8rem\)[^}]*line-height:\s*1\.02/s,
+  );
+  assert.match(
+    mobile,
+    /\.hero-copy\s*>\s*\.hero-script\s*\{[^}]*font-size:\s*clamp\(1\.85rem,\s*8vw,\s*2\.3rem\)/s,
+  );
+  assert.doesNotMatch(mobile, /\.btn\s*\{[^}]*min-height:\s*(?:[0-4]\d|5[0-7])px/s);
+});
+
 test("tablet contact form uses semantic full-width rows", () => {
   const tablet = css.match(/@media\s*\(min-width:\s*620px\)\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
 

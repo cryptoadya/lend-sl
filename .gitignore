@@ -4,6 +4,7 @@
 node_modules
 .astro
 .npm-cache
+.wrangler/
 dist
 output
 .dev.vars

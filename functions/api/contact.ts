@@ -24,6 +24,11 @@ function json(status: number, body: { ok: boolean; message: string }): Response 
 export const onRequestPost: PagesFunction<Env> = async ({ request }) => {
   let body: ContactBody;
 
+  const contentType = request.headers.get("Content-Type") ?? "";
+  if (!contentType.toLowerCase().includes("application/json")) {
+    return json(400, { ok: false, message: "Bitte prüfen Sie Ihre Angaben." });
+  }
+
   try {
     body = (await request.json()) as ContactBody;
   } catch {

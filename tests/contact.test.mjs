@@ -1,77 +1,41 @@
-/**
- * Tests for functions/api/contact.ts (Pages Function)
- *
- * Because the source is TypeScript and this test suite runs under Node's
- * built-in test runner (ESM, no transpiler), we test the *compiled* behaviour
- * by importing a tiny re-implementation that mirrors the handler's logic.
- *
- * The function logic is also tested end-to-end in the pages:dev smoke test
- * described in the README / validation section.
- *
- * To avoid pulling in a full TS compiler we exercise all validation paths
- * through a pure-JS shadow that duplicates only the business rules.
- * Any change to validation in contact.ts must be reflected here.
- */
-
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-// ---------------------------------------------------------------------------
-// Helper: in-process shadow of the Pages Function handler
-// ---------------------------------------------------------------------------
+import { onRequest } from "../functions/api/contact.ts";
 
-function buildRequest(method, body) {
-  const headers = { "Content-Type": "application/json" };
-  return {
+const JSON_HEADERS = {
+  "Content-Type": "application/json",
+};
+
+function buildRequest(method, body, headers = JSON_HEADERS) {
+  if (body === null) {
+    return new Request("https://example.com/api/contact", {
+      method,
+      headers,
+      body: "{",
+    });
+  }
+
+  return new Request("https://example.com/api/contact", {
     method,
-    json: () =>
-      body === null
-        ? Promise.reject(new SyntaxError("bad json"))
-        : Promise.resolve(body),
-  };
+    headers,
+    body: method === "GET" ? undefined : JSON.stringify(body),
+  });
 }
 
-/** Mirrors the validation logic in functions/api/contact.ts */
 async function handleContact(request) {
-  const jsonHeaders = {
-    "Content-Type": "application/json; charset=utf-8",
-    "Cache-Control": "no-store",
-  };
-
-  const json = (status, payload) => ({
-    status,
-    headers: jsonHeaders,
-    body: payload,
+  const response = await onRequest({
+    request,
+    env: {},
+    params: {},
+    data: {},
+    next: () => Promise.resolve(new Response(null, { status: 404 })),
+    waitUntil: () => {},
+    passThroughOnException: () => {},
   });
-
-  if (request.method !== "POST") {
-    return json(405, { ok: false, message: "Method not allowed." });
-  }
-
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return json(400, { ok: false, message: "Bitte prüfen Sie Ihre Angaben." });
-  }
-
-  const name = String(body.name ?? "").trim();
-  const phone = String(body.phone ?? "").trim();
-  const email = String(body.email ?? "").trim();
-  const message = String(body.message ?? "").trim();
-  const privacy = body.privacy;
-  const website = String(body.website ?? "").trim();
-
-  if (website) {
-    return json(200, { ok: true, message: "Vielen Dank. Wir melden uns zeitnah bei Ihnen." });
-  }
-
-  if (!name || !message || (!phone && !email) || privacy !== true) {
-    return json(400, { ok: false, message: "Bitte prüfen Sie Ihre Angaben." });
-  }
-
-  return json(200, { ok: true, message: "Vielen Dank. Wir melden uns zeitnah bei Ihnen." });
+  const body = await response.json();
+  return { response, body };
 }
 
 // ---------------------------------------------------------------------------
@@ -91,25 +55,25 @@ test("functions/api/contact.ts exists", async () => {
 // ---------------------------------------------------------------------------
 
 test("contact endpoint rejects GET with 405", async () => {
-  const res = await handleContact(buildRequest("GET", {}));
-  assert.equal(res.status, 405);
-  assert.equal(res.body.ok, false);
+  const { response, body } = await handleContact(buildRequest("GET", {}));
+  assert.equal(response.status, 405);
+  assert.equal(body.ok, false);
 });
 
 test("contact endpoint rejects PUT with 405", async () => {
-  const res = await handleContact(buildRequest("PUT", {}));
-  assert.equal(res.status, 405);
-  assert.equal(res.body.ok, false);
+  const { response, body } = await handleContact(buildRequest("PUT", {}));
+  assert.equal(response.status, 405);
+  assert.equal(body.ok, false);
 });
 
 test("contact endpoint rejects DELETE with 405", async () => {
-  const res = await handleContact(buildRequest("DELETE", {}));
-  assert.equal(res.status, 405);
-  assert.equal(res.body.ok, false);
+  const { response, body } = await handleContact(buildRequest("DELETE", {}));
+  assert.equal(response.status, 405);
+  assert.equal(body.ok, false);
 });
 
 test("contact endpoint accepts POST", async () => {
-  const res = await handleContact(
+  const { response, body } = await handleContact(
     buildRequest("POST", {
       name: "Test",
       phone: "0173000000",
@@ -119,8 +83,8 @@ test("contact endpoint accepts POST", async () => {
       website: "",
     }),
   );
-  assert.equal(res.status, 200);
-  assert.equal(res.body.ok, true);
+  assert.equal(response.status, 200);
+  assert.equal(body.ok, true);
 });
 
 // ---------------------------------------------------------------------------
@@ -128,9 +92,28 @@ test("contact endpoint accepts POST", async () => {
 // ---------------------------------------------------------------------------
 
 test("contact endpoint rejects malformed JSON with 400", async () => {
-  const res = await handleContact(buildRequest("POST", null));
-  assert.equal(res.status, 400);
-  assert.equal(res.body.ok, false);
+  const { response, body } = await handleContact(buildRequest("POST", null));
+  assert.equal(response.status, 400);
+  assert.equal(body.ok, false);
+});
+
+test("contact endpoint rejects non-JSON content type with 400", async () => {
+  const { response, body } = await handleContact(
+    buildRequest(
+      "POST",
+      {
+        name: "Test",
+        phone: "0173000000",
+        email: "",
+        message: "Hallo",
+        privacy: true,
+        website: "",
+      },
+      { "Content-Type": "text/plain" },
+    ),
+  );
+  assert.equal(response.status, 400);
+  assert.equal(body.ok, false);
 });
 
 // ---------------------------------------------------------------------------
@@ -138,7 +121,7 @@ test("contact endpoint rejects malformed JSON with 400", async () => {
 // ---------------------------------------------------------------------------
 
 test("contact endpoint rejects missing name", async () => {
-  const res = await handleContact(
+  const { response, body } = await handleContact(
     buildRequest("POST", {
       name: "",
       phone: "0173000000",
@@ -148,12 +131,12 @@ test("contact endpoint rejects missing name", async () => {
       website: "",
     }),
   );
-  assert.equal(res.status, 400);
-  assert.equal(res.body.ok, false);
+  assert.equal(response.status, 400);
+  assert.equal(body.ok, false);
 });
 
 test("contact endpoint rejects whitespace-only name", async () => {
-  const res = await handleContact(
+  const { response, body } = await handleContact(
     buildRequest("POST", {
       name: "   ",
       phone: "0173000000",
@@ -163,12 +146,12 @@ test("contact endpoint rejects whitespace-only name", async () => {
       website: "",
     }),
   );
-  assert.equal(res.status, 400);
-  assert.equal(res.body.ok, false);
+  assert.equal(response.status, 400);
+  assert.equal(body.ok, false);
 });
 
 test("contact endpoint rejects missing message", async () => {
-  const res = await handleContact(
+  const { response, body } = await handleContact(
     buildRequest("POST", {
       name: "Test",
       phone: "0173000000",
@@ -178,12 +161,12 @@ test("contact endpoint rejects missing message", async () => {
       website: "",
     }),
   );
-  assert.equal(res.status, 400);
-  assert.equal(res.body.ok, false);
+  assert.equal(response.status, 400);
+  assert.equal(body.ok, false);
 });
 
 test("contact endpoint rejects missing phone and email", async () => {
-  const res = await handleContact(
+  const { response, body } = await handleContact(
     buildRequest("POST", {
       name: "Test",
       phone: "",
@@ -193,12 +176,12 @@ test("contact endpoint rejects missing phone and email", async () => {
       website: "",
     }),
   );
-  assert.equal(res.status, 400);
-  assert.equal(res.body.ok, false);
+  assert.equal(response.status, 400);
+  assert.equal(body.ok, false);
 });
 
 test("contact endpoint rejects unchecked privacy", async () => {
-  const res = await handleContact(
+  const { response, body } = await handleContact(
     buildRequest("POST", {
       name: "Test",
       phone: "0173000000",
@@ -208,8 +191,8 @@ test("contact endpoint rejects unchecked privacy", async () => {
       website: "",
     }),
   );
-  assert.equal(res.status, 400);
-  assert.equal(res.body.ok, false);
+  assert.equal(response.status, 400);
+  assert.equal(body.ok, false);
 });
 
 // ---------------------------------------------------------------------------
@@ -217,7 +200,7 @@ test("contact endpoint rejects unchecked privacy", async () => {
 // ---------------------------------------------------------------------------
 
 test("contact endpoint accepts phone-only (no email)", async () => {
-  const res = await handleContact(
+  const { response, body } = await handleContact(
     buildRequest("POST", {
       name: "Test",
       phone: "0173000000",
@@ -227,12 +210,12 @@ test("contact endpoint accepts phone-only (no email)", async () => {
       website: "",
     }),
   );
-  assert.equal(res.status, 200);
-  assert.equal(res.body.ok, true);
+  assert.equal(response.status, 200);
+  assert.equal(body.ok, true);
 });
 
 test("contact endpoint accepts email-only (no phone)", async () => {
-  const res = await handleContact(
+  const { response, body } = await handleContact(
     buildRequest("POST", {
       name: "Test",
       phone: "",
@@ -242,8 +225,8 @@ test("contact endpoint accepts email-only (no phone)", async () => {
       website: "",
     }),
   );
-  assert.equal(res.status, 200);
-  assert.equal(res.body.ok, true);
+  assert.equal(response.status, 200);
+  assert.equal(body.ok, true);
 });
 
 // ---------------------------------------------------------------------------
@@ -251,7 +234,7 @@ test("contact endpoint accepts email-only (no phone)", async () => {
 // ---------------------------------------------------------------------------
 
 test("honeypot: non-empty website field returns generic 200 without exposing content", async () => {
-  const res = await handleContact(
+  const { response, body } = await handleContact(
     buildRequest("POST", {
       name: "",
       phone: "",
@@ -261,8 +244,28 @@ test("honeypot: non-empty website field returns generic 200 without exposing con
       website: "http://spam.example.com",
     }),
   );
-  assert.equal(res.status, 200);
-  assert.equal(res.body.ok, true);
+  assert.equal(response.status, 200);
+  assert.equal(body.ok, true);
+});
+
+test("contact endpoint returns expected JSON and cache headers", async () => {
+  const { response, body } = await handleContact(
+    buildRequest("POST", {
+      name: "Test",
+      phone: "0173000000",
+      email: "",
+      message: "Hallo",
+      privacy: true,
+      website: "",
+    }),
+  );
+
+  assert.equal(response.headers.get("Content-Type"), "application/json; charset=utf-8");
+  assert.equal(response.headers.get("Cache-Control"), "no-store");
+  assert.deepEqual(body, {
+    ok: true,
+    message: "Vielen Dank. Wir melden uns zeitnah bei Ihnen.",
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -327,5 +330,6 @@ test("package.json has pages:dev script", async () => {
     typeof pkg.scripts?.["pages:dev"] === "string",
     "pages:dev script must exist",
   );
-  assert.match(pkg.scripts["pages:dev"], /wrangler pages dev/);
+  assert.equal(pkg.scripts["pages:dev"], "wrangler pages dev dist");
+  assert.doesNotMatch(JSON.stringify(pkg.scripts), /gen-worker/);
 });

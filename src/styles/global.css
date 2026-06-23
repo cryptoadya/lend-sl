@@ -863,6 +863,15 @@ h3 {
   font-weight: 700;
 }
 
+.form-warning {
+  display: block;
+  margin-bottom: 2px;
+  color: #8b2f24;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
 .privacy-check a {
   color: var(--teal);
   text-decoration: underline;

@@ -1,3 +1,8 @@
 name = "lend-sl"
 compatibility_date = "2026-06-22"
 pages_build_output_dir = "dist"
+
+[vars]
+CONTACT_MODE = "resend"
+CONTACT_FROM = "S-Line Seniorenhilfe <kontakt@s-line-seniorenhilfe.de>"
+CONTACT_TO = "info@s-line-seniorenhilfe.de"

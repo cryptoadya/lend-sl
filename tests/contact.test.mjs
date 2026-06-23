@@ -24,10 +24,10 @@ function buildRequest(method, body, headers = JSON_HEADERS) {
   });
 }
 
-async function handleContact(request) {
+async function handleContact(request, env = {}) {
   const response = await onRequest({
     request,
-    env: {},
+    env,
     params: {},
     data: {},
     next: () => Promise.resolve(new Response(null, { status: 404 })),
@@ -36,6 +36,28 @@ async function handleContact(request) {
   });
   const body = await response.json();
   return { response, body };
+}
+
+function validContactBody(overrides = {}) {
+  return {
+    name: "Test",
+    phone: "0173000000",
+    email: "",
+    message: "Hallo",
+    privacy: true,
+    website: "",
+    ...overrides,
+  };
+}
+
+async function withMockedFetch(mockFetch, callback) {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = mockFetch;
+  try {
+    await callback();
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -74,17 +96,96 @@ test("contact endpoint rejects DELETE with 405", async () => {
 
 test("contact endpoint accepts POST", async () => {
   const { response, body } = await handleContact(
-    buildRequest("POST", {
-      name: "Test",
-      phone: "0173000000",
-      email: "",
-      message: "Hallo",
-      privacy: true,
-      website: "",
-    }),
+    buildRequest("POST", validContactBody()),
   );
   assert.equal(response.status, 200);
   assert.equal(body.ok, true);
+});
+
+test("contact endpoint uses mock mode by default", async () => {
+  let fetchCalled = false;
+
+  await withMockedFetch(
+    async () => {
+      fetchCalled = true;
+      return new Response(null, { status: 500 });
+    },
+    async () => {
+      const { response, body } = await handleContact(
+        buildRequest("POST", validContactBody()),
+      );
+
+      assert.equal(response.status, 200);
+      assert.equal(body.ok, true);
+      assert.equal(fetchCalled, false);
+    },
+  );
+});
+
+test("contact endpoint sends email through Resend when enabled", async () => {
+  let requestUrl = "";
+  let requestInit;
+
+  await withMockedFetch(
+    async (url, init) => {
+      requestUrl = String(url);
+      requestInit = init;
+      return new Response(JSON.stringify({ id: "email_test" }), { status: 200 });
+    },
+    async () => {
+      const { response, body } = await handleContact(
+        buildRequest(
+          "POST",
+          validContactBody({
+            email: "kunde@example.com",
+            message: "Bitte um Rueckruf.",
+          }),
+        ),
+        {
+          CONTACT_MODE: "resend",
+          RESEND_API_KEY: "re_test_key",
+          CONTACT_FROM: "S-Line Seniorenhilfe <kontakt@s-line-seniorenhilfe.de>",
+          CONTACT_TO: "inbox@example.com",
+        },
+      );
+
+      assert.equal(response.status, 200);
+      assert.equal(body.ok, true);
+    },
+  );
+
+  assert.equal(requestUrl, "https://api.resend.com/emails");
+  assert.equal(requestInit.method, "POST");
+  assert.equal(requestInit.headers.Authorization, "Bearer re_test_key");
+
+  const payload = JSON.parse(requestInit.body);
+  assert.equal(payload.from, "S-Line Seniorenhilfe <kontakt@s-line-seniorenhilfe.de>");
+  assert.deepEqual(payload.to, ["inbox@example.com"]);
+  assert.deepEqual(payload.reply_to, ["kunde@example.com"]);
+  assert.match(payload.subject, /Neue Anfrage von Test/);
+  assert.match(payload.text, /Telefon: 0173000000/);
+  assert.match(payload.text, /E-Mail: kunde@example.com/);
+  assert.match(payload.text, /Bitte um Rueckruf\./);
+});
+
+test("contact endpoint reports failure when Resend rejects the request", async () => {
+  await withMockedFetch(
+    async () => new Response(JSON.stringify({ message: "invalid api key" }), { status: 401 }),
+    async () => {
+      const { response, body } = await handleContact(
+        buildRequest("POST", validContactBody()),
+        {
+          CONTACT_MODE: "resend",
+          RESEND_API_KEY: "re_bad_key",
+          CONTACT_FROM: "S-Line Seniorenhilfe <kontakt@s-line-seniorenhilfe.de>",
+          CONTACT_TO: "inbox@example.com",
+        },
+      );
+
+      assert.equal(response.status, 502);
+      assert.equal(body.ok, false);
+    },
+  );
 });
 
 // ---------------------------------------------------------------------------

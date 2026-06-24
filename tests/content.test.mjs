@@ -5,6 +5,61 @@ import test from "node:test";
 const readProjectFile = (path) =>
   readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
+const sourceFiles = [
+  "astro.config.mjs",
+  "src/pages/index.astro",
+  "src/pages/impressum.astro",
+  "src/pages/datenschutz.astro",
+  "src/components/Seo.astro",
+  "src/components/ContactCTA.astro",
+  "src/components/Footer.astro",
+  "src/components/Header.astro",
+  "src/components/Hero.astro",
+  "src/components/ServicesGrid.astro",
+  "src/components/ProcessSteps.astro",
+  "public/script.js",
+  "public/robots.txt",
+  "wrangler.toml",
+];
+
+test("production contact and domain values are consistent in source", async () => {
+  const files = await Promise.all(
+    sourceFiles.map(async (path) => [path, await readProjectFile(path)]),
+  );
+  const productionEmail = "info@s-line-seniorenhilfe.de";
+  const productionDomain = "https://s-line-seniorenhilfe.de";
+
+  for (const [path, contents] of files) {
+    assert.doesNotMatch(contents, /adelmarkt2015@gmail\.com/, `${path} contains old Gmail address`);
+    assert.doesNotMatch(contents, /https:\/\/example\.com/, `${path} contains example.com`);
+  }
+
+  const [contact, footer, index, seo, config] = await Promise.all([
+    readProjectFile("src/components/ContactCTA.astro"),
+    readProjectFile("src/components/Footer.astro"),
+    readProjectFile("src/pages/index.astro"),
+    readProjectFile("src/components/Seo.astro"),
+    readProjectFile("astro.config.mjs"),
+  ]);
+
+  assert.match(contact, new RegExp(`mailto:${productionEmail}`));
+  assert.match(footer, new RegExp(`mailto:${productionEmail}`));
+  assert.match(index, new RegExp(`email: "${productionEmail}"`));
+  assert.match(seo, new RegExp(productionDomain.replaceAll(".", "\\.")));
+  assert.match(config, new RegExp(productionDomain.replaceAll(".", "\\.")));
+});
+
+test("security headers are configured for Cloudflare Pages", async () => {
+  const headers = await readProjectFile("public/_headers");
+
+  assert.match(headers, /^\/\*/m);
+  assert.match(headers, /Content-Security-Policy:/);
+  assert.match(headers, /Strict-Transport-Security:/);
+  assert.match(headers, /X-Frame-Options:\s*DENY/);
+  assert.match(headers, /Referrer-Policy:\s*strict-origin-when-cross-origin/);
+  assert.match(headers, /Permissions-Policy:/);
+});
+
 test("the landing page follows the requested content structure", async () => {
   const [index, hero, process, contact, footer] = await Promise.all([
     readProjectFile("src/pages/index.astro"),

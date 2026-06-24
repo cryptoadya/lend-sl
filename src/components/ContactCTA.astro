@@ -10,9 +10,9 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8c1.5 3 3.8 5.3 6.7 6.7l2.2-2.1c.3-.3.8-.4 1.2-.3 1.3.4 2.6.6 4 .6.7 0 1.3.6 1.3 1.3v3.5c0 .7-.6 1.3-1.3 1.3C10.4 21.8 2.2 13.6 2.2 3.3 2.2 2.6 2.8 2 3.5 2H7c.7 0 1.3.6 1.3 1.3 0 1.4.2 2.8.6 4 .1.4 0 .9-.3 1.2l-2 2.3Z" /></svg>
         0173 2126091
       </a>
-      <a href="mailto:adelmarkt2015@gmail.com">
+      <a href="mailto:info@s-line-seniorenhilfe.de">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.8 6.5h16.4v11H3.8v-11Zm0 0 8.2 6.1 8.2-6.1" /></svg>
-        adelmarkt2015@gmail.com
+        info@s-line-seniorenhilfe.de
       </a>
       <span>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6.2-5.5 6.2-11.1A6.2 6.2 0 0 0 5.8 9.9C5.8 15.5 12 21 12 21Z" /><path d="M12 12.2a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6Z" /></svg>
@@ -29,15 +29,15 @@
   <form class="contact-form" data-contact-form novalidate>
     <label class="form-field-full">
       Name
-      <input name="name" autocomplete="name" required />
+      <input name="name" autocomplete="name" maxlength="100" required />
     </label>
     <label>
       Telefonnummer
-      <input name="phone" type="tel" autocomplete="tel" aria-describedby="contact-return-error" />
+      <input name="phone" type="tel" autocomplete="tel" maxlength="160" aria-describedby="contact-return-error" />
     </label>
     <label>
       E-Mail
-      <input name="email" type="email" autocomplete="email" aria-describedby="contact-return-error" />
+      <input name="email" type="email" autocomplete="email" maxlength="160" aria-describedby="contact-return-error" />
     </label>
     <p class="form-error" id="contact-return-error" data-contact-error role="alert" hidden>
       Bitte geben Sie eine Telefonnummer oder E-Mail-Adresse an, damit wir Sie erreichen können.
@@ -47,7 +47,7 @@
       <span class="form-warning">
         Bitte senden Sie über dieses Formular keine sensiblen Daten.
       </span>
-      <textarea name="message" rows="5" required></textarea>
+      <textarea name="message" rows="5" maxlength="4000" required></textarea>
     </label>
     <label class="privacy-check">
       <input name="privacy" type="checkbox" required />

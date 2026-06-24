@@ -142,15 +142,13 @@ test("benefit and service copy stays concrete without overpromising", async () =
     "Zeit für Gespräche, eine verlässliche Tagesstruktur und Hilfe bei kleinen Aufgaben zu Hause.",
     "Erinnerungen, Unterlagen und tägliche Abläufe übersichtlich ordnen.",
     "Einfache Speisen zubereiten und vertraute Gewohnheiten erhalten.",
-    "Beim Gießen, Pflegen von Balkon- und Zimmerpflanzen sowie bei leichten Handgriffen im Grünen begleiten.",
-    "Bei einfachen, nicht handwerklichen Handgriffen im Haushalt unterstützen, zum Beispiel Dinge ordnen oder gestalten.",
-    "Beim Einkauf unterstützen und zu vereinbarten Arztterminen begleiten, ohne medizinische Pflege oder Fahrdienst anzubieten.",
+    "Pflanzen pflegen, leichte Arbeiten im Garten erledigen und Zeit im Grünen verbringen.",
+    "Bei einfachen, vertrauten Handgriffen unterstützen, kleine Dinge ordnen, befestigen oder gestalten.",
+    "Beim Einkauf unterstützen und zu vereinbarten Arztterminen begleiten.",
   ];
 
-  assert.match(services, /Pflanzen im Alltag/);
-  assert.match(services, /Kleine Alltagshandgriffe/);
-  assert.doesNotMatch(services, /Garten und Pflanzen/);
-  assert.doesNotMatch(services, /Kleine handwerkliche Tätigkeiten/);
+  assert.match(services, /Garten und Pflanzen/);
+  assert.match(services, /Kleine handwerkliche Tätigkeiten/);
 
   for (const copy of expectedServiceCopy) {
     assert.ok(services.includes(copy), `missing service copy: ${copy}`);

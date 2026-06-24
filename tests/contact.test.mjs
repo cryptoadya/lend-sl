@@ -97,12 +97,13 @@ test("contact endpoint rejects DELETE with 405", async () => {
 test("contact endpoint accepts POST", async () => {
   const { response, body } = await handleContact(
     buildRequest("POST", validContactBody()),
+    { CONTACT_MODE: "mock" },
   );
   assert.equal(response.status, 200);
   assert.equal(body.ok, true);
 });
 
-test("contact endpoint uses mock mode by default", async () => {
+test("contact endpoint fails closed when production mode is not configured", async () => {
   let fetchCalled = false;
 
   await withMockedFetch(
@@ -115,11 +116,33 @@ test("contact endpoint uses mock mode by default", async () => {
         buildRequest("POST", validContactBody()),
       );
 
-      assert.equal(response.status, 200);
-      assert.equal(body.ok, true);
+      assert.equal(response.status, 503);
+      assert.equal(body.ok, false);
       assert.equal(fetchCalled, false);
     },
   );
+});
+
+test("contact endpoint rejects oversized requests before parsing JSON", async () => {
+  const body = JSON.stringify(validContactBody({ message: "a".repeat(12_000) }));
+  const request = new Request("https://example.com/api/contact", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Content-Length": String(body.length),
+    },
+    body,
+  });
+
+  const { response, body: responseBody } = await handleContact(request, {
+    CONTACT_MODE: "resend",
+    RESEND_API_KEY: "re_test_key",
+    CONTACT_FROM: "S-Line Seniorenhilfe <kontakt@s-line-seniorenhilfe.de>",
+    CONTACT_TO: "inbox@example.com",
+  });
+
+  assert.equal(response.status, 413);
+  assert.equal(responseBody.ok, false);
 });
 
 test("contact endpoint sends email through Resend when enabled", async () => {
@@ -296,6 +319,30 @@ test("contact endpoint rejects unchecked privacy", async () => {
   assert.equal(body.ok, false);
 });
 
+test("contact endpoint rejects invalid reply-to email addresses", async () => {
+  const { response, body } = await handleContact(
+    buildRequest("POST", validContactBody({
+      phone: "",
+      email: "kein-email-format",
+    })),
+  );
+
+  assert.equal(response.status, 400);
+  assert.equal(body.ok, false);
+});
+
+test("contact endpoint rejects overly long field values", async () => {
+  const { response, body } = await handleContact(
+    buildRequest("POST", validContactBody({
+      name: "a".repeat(101),
+      message: "Hallo",
+    })),
+  );
+
+  assert.equal(response.status, 400);
+  assert.equal(body.ok, false);
+});
+
 // ---------------------------------------------------------------------------
 // Validation: accepts phone-only or email-only
 // ---------------------------------------------------------------------------
@@ -310,6 +357,7 @@ test("contact endpoint accepts phone-only (no email)", async () => {
       privacy: true,
       website: "",
     }),
+    { CONTACT_MODE: "mock" },
   );
   assert.equal(response.status, 200);
   assert.equal(body.ok, true);
@@ -325,6 +373,7 @@ test("contact endpoint accepts email-only (no phone)", async () => {
       privacy: true,
       website: "",
     }),
+    { CONTACT_MODE: "mock" },
   );
   assert.equal(response.status, 200);
   assert.equal(body.ok, true);
@@ -359,6 +408,7 @@ test("contact endpoint returns expected JSON and cache headers", async () => {
       privacy: true,
       website: "",
     }),
+    { CONTACT_MODE: "mock" },
   );
 
   assert.equal(response.headers.get("Content-Type"), "application/json; charset=utf-8");

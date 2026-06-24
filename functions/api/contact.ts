@@ -21,6 +21,12 @@ const JSON_HEADERS: HeadersInit = {
 
 const SUCCESS_MESSAGE = "Vielen Dank. Wir melden uns zeitnah bei Ihnen.";
 const ERROR_MESSAGE = "Ihre Anfrage konnte gerade nicht gesendet werden.";
+const VALIDATION_MESSAGE = "Bitte prüfen Sie Ihre Angaben.";
+const MAX_CONTENT_LENGTH = 10_000;
+const MAX_NAME_LENGTH = 100;
+const MAX_CONTACT_LENGTH = 160;
+const MAX_MESSAGE_LENGTH = 4_000;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function json(status: number, body: { ok: boolean; message: string }): Response {
   return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
@@ -108,15 +114,20 @@ async function sendWithResend({
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   let body: ContactBody;
 
+  const contentLength = Number(request.headers.get("Content-Length") ?? "0");
+  if (Number.isFinite(contentLength) && contentLength > MAX_CONTENT_LENGTH) {
+    return json(413, { ok: false, message: VALIDATION_MESSAGE });
+  }
+
   const contentType = request.headers.get("Content-Type") ?? "";
   if (!contentType.toLowerCase().includes("application/json")) {
-    return json(400, { ok: false, message: "Bitte prüfen Sie Ihre Angaben." });
+    return json(400, { ok: false, message: VALIDATION_MESSAGE });
   }
 
   try {
     body = (await request.json()) as ContactBody;
   } catch {
-    return json(400, { ok: false, message: "Bitte prüfen Sie Ihre Angaben." });
+    return json(400, { ok: false, message: VALIDATION_MESSAGE });
   }
 
   const name = String(body.name ?? "").trim();
@@ -133,7 +144,20 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
   // Validation
   if (!name || !message || (!phone && !email) || privacy !== true) {
-    return json(400, { ok: false, message: "Bitte prüfen Sie Ihre Angaben." });
+    return json(400, { ok: false, message: VALIDATION_MESSAGE });
+  }
+
+  if (
+    name.length > MAX_NAME_LENGTH ||
+    phone.length > MAX_CONTACT_LENGTH ||
+    email.length > MAX_CONTACT_LENGTH ||
+    message.length > MAX_MESSAGE_LENGTH
+  ) {
+    return json(400, { ok: false, message: VALIDATION_MESSAGE });
+  }
+
+  if (email && !EMAIL_PATTERN.test(email)) {
+    return json(400, { ok: false, message: VALIDATION_MESSAGE });
   }
 
   if (env.CONTACT_MODE === "resend") {
@@ -145,12 +169,17 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return json(200, { ok: true, message: SUCCESS_MESSAGE });
   }
 
-  // Log minimal diagnostic summary only – never log actual personal data
-  console.log(
-    `[contact mock] accepted request: namePresent=true phonePresent=${Boolean(phone)} emailPresent=${Boolean(email)} messageLength=${message.length}`,
-  );
+  if (env.CONTACT_MODE === "mock") {
+    // Log minimal diagnostic summary only; never log actual personal data.
+    console.log(
+      `[contact mock] accepted request: namePresent=true phonePresent=${Boolean(phone)} emailPresent=${Boolean(email)} messageLength=${message.length}`,
+    );
 
-  return json(200, { ok: true, message: SUCCESS_MESSAGE });
+    return json(200, { ok: true, message: SUCCESS_MESSAGE });
+  }
+
+  console.error("[contact] invalid CONTACT_MODE configuration");
+  return json(503, { ok: false, message: ERROR_MESSAGE });
 };
 
 // Reject all non-POST methods

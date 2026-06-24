@@ -17,8 +17,7 @@ const {
   noindex = false,
 } = Astro.props;
 
-// Temporary fallback for local builds only. Production canonical/OG URLs require SITE_URL in Astro config.
-const site = Astro.site ?? new URL("https://example.com");
+const site = Astro.site ?? new URL("https://s-line-seniorenhilfe.de");
 const canonical = new URL(path, site).toString();
 const ogImage = new URL(image, site).toString();
 ---

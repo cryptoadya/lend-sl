@@ -47,6 +47,10 @@ test("production contact and domain values are consistent in source", async () =
   assert.match(index, new RegExp(`email: "${productionEmail}"`));
   assert.match(seo, new RegExp(productionDomain.replaceAll(".", "\\.")));
   assert.match(config, new RegExp(productionDomain.replaceAll(".", "\\.")));
+  assert.doesNotMatch(config, /CF_PAGES_URL/);
+
+  const robots = await readProjectFile("public/robots.txt");
+  assert.match(robots, new RegExp(`Sitemap: ${productionDomain.replaceAll(".", "\\.")}/sitemap.xml`));
 });
 
 test("security headers are configured for Cloudflare Pages", async () => {

@@ -4,7 +4,6 @@ import sitemap from "@astrojs/sitemap";
 const site =
   process.env.SITE_URL ||
   process.env.PUBLIC_SITE_URL ||
-  process.env.CF_PAGES_URL ||
   "https://s-line-seniorenhilfe.de";
 
 export default defineConfig({

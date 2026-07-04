@@ -18,13 +18,27 @@ const {
 } = Astro.props;
 
 const site = Astro.site ?? new URL("https://s-line-seniorenhilfe.de");
-const canonical = new URL(path, site).toString();
+const normalizePagePath = (value: string) => {
+  if (value === "/") {
+    return value;
+  }
+
+  const [pathname, suffix = ""] = value.split(/(?=[?#])/, 2);
+  const normalizedPathname =
+    pathname.endsWith("/") || pathname.includes(".")
+      ? pathname
+      : `${pathname}/`;
+
+  return `${normalizedPathname}${suffix}`;
+};
+
+const canonical = new URL(normalizePagePath(path), site).toString();
 const ogImage = new URL(image, site).toString();
 ---
 
 <title>{title}</title>
 <meta name="description" content={description} />
-{noindex && <meta name="robots" content="noindex, nofollow" />}
+<meta name="robots" content={noindex ? "noindex, nofollow" : "index, follow"} />
 <link rel="canonical" href={canonical} />
 <link rel="sitemap" href="/sitemap.xml" />
 <meta property="og:locale" content="de_DE" />

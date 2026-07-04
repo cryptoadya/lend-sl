@@ -51,6 +51,18 @@ test("production contact and domain values are consistent in source", async () =
 
   const robots = await readProjectFile("public/robots.txt");
   assert.match(robots, new RegExp(`Sitemap: ${productionDomain.replaceAll(".", "\\.")}/sitemap.xml`));
+
+  const [pkg, impressum, datenschutz] = await Promise.all([
+    readProjectFile("package.json"),
+    readProjectFile("src/pages/impressum.astro"),
+    readProjectFile("src/pages/datenschutz.astro"),
+  ]);
+
+  assert.match(pkg, /"postbuild": "cp dist\/sitemap-0\.xml dist\/sitemap\.xml"/);
+  assert.match(impressum, /path="\/impressum"/);
+  assert.match(datenschutz, /path="\/datenschutz"/);
+  assert.match(seo, /normalizePagePath/);
+  assert.match(seo, /index, follow/);
 });
 
 test("security headers are configured for Cloudflare Pages", async () => {

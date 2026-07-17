@@ -1185,6 +1185,18 @@ h3 {
   }
 }
 
+@media (min-width: 900px) and (max-height: 760px) {
+  .hero {
+    padding-top: 36px;
+    padding-bottom: 44px;
+  }
+
+  .hero-media,
+  .hero-media img {
+    min-height: 460px;
+  }
+}
+
 @media (max-width: 899px) {
   .site-header {
     gap: 10px;

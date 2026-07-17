@@ -89,6 +89,22 @@ test("desktop hero scales the headline to its column", () => {
   );
 });
 
+test("short desktop hero keeps the primary CTA above the fold", () => {
+  const shortDesktop =
+    css.match(
+      /@media\s*\(min-width:\s*900px\)\s*and\s*\(max-height:\s*760px\)\s*\{([\s\S]*?)\n\}/,
+    )?.[1] ?? "";
+
+  assert.match(
+    shortDesktop,
+    /\.hero\s*\{[^}]*padding-top:\s*36px[^}]*padding-bottom:\s*44px/s,
+  );
+  assert.match(
+    shortDesktop,
+    /\.hero-media,\s*\.hero-media img\s*\{[^}]*min-height:\s*460px/s,
+  );
+});
+
 test("desktop contact navigation aligns the two-column block below the header", () => {
   const desktop = css.match(/@media\s*\(min-width:\s*900px\)\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
 

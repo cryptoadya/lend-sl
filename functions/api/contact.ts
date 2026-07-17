@@ -25,6 +25,7 @@ const SUCCESS_MESSAGE = "Vielen Dank. Wir melden uns zeitnah bei Ihnen.";
 const ERROR_MESSAGE = "Ihre Anfrage konnte gerade nicht gesendet werden.";
 const VALIDATION_MESSAGE = "Bitte prüfen Sie Ihre Angaben.";
 const MAX_CONTENT_LENGTH = 10_000;
+const RESEND_TIMEOUT_MS = 8_000;
 const MAX_NAME_LENGTH = 100;
 const MAX_CONTACT_LENGTH = 160;
 const MAX_MESSAGE_LENGTH = 4_000;
@@ -33,6 +34,44 @@ const JSON_CONTENT_TYPE = "application/json";
 const FORM_CONTENT_TYPE = "application/x-www-form-urlencoded";
 const SUCCESS_PATH = "/anfrage-gesendet";
 const ERROR_PATH = "/anfrage-fehler";
+
+function isContactBody(value: unknown): value is ContactBody {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+async function readBodyWithLimit(
+  request: Request,
+): Promise<{ text: string; tooLarge: boolean }> {
+  if (!request.body) {
+    return { text: "", tooLarge: false };
+  }
+
+  const reader = request.body.getReader();
+  const buffer = new Uint8Array(MAX_CONTENT_LENGTH);
+  let length = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      if (length + value.byteLength > MAX_CONTENT_LENGTH) {
+        await reader.cancel();
+        return { text: "", tooLarge: true };
+      }
+
+      buffer.set(value, length);
+      length += value.byteLength;
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  return {
+    text: new TextDecoder().decode(buffer.subarray(0, length)),
+    tooLarge: false,
+  };
+}
 
 function json(status: number, body: { ok: boolean; message: string }): Response {
   return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
@@ -118,14 +157,30 @@ async function sendWithResend({
     payload.reply_to = [email];
   }
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), RESEND_TIMEOUT_MS);
+  let response: Response;
+
+  try {
+    response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+  } catch {
+    console.error(
+      controller.signal.aborted
+        ? "[contact resend] request timed out"
+        : "[contact resend] request failed",
+    );
+    return false;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     console.error(`[contact resend] send failed with status ${response.status}`);
@@ -153,9 +208,21 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return json(400, { ok: false, message: VALIDATION_MESSAGE });
   }
 
+  let rawBody: { text: string; tooLarge: boolean };
+
+  try {
+    rawBody = await readBodyWithLimit(request);
+  } catch {
+    return contactResponse(kind, 400, { ok: false, message: VALIDATION_MESSAGE });
+  }
+
+  if (rawBody.tooLarge) {
+    return contactResponse(kind, 413, { ok: false, message: VALIDATION_MESSAGE });
+  }
+
   try {
     if (kind === "form") {
-      const formData = await request.formData();
+      const formData = new URLSearchParams(rawBody.text);
       body = {
         name: formData.get("name"),
         phone: formData.get("phone"),
@@ -165,7 +232,11 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         website: formData.get("website"),
       };
     } else {
-      body = (await request.json()) as ContactBody;
+      const parsedBody: unknown = JSON.parse(rawBody.text);
+      if (!isContactBody(parsedBody)) {
+        return contactResponse(kind, 400, { ok: false, message: VALIDATION_MESSAGE });
+      }
+      body = parsedBody;
     }
   } catch {
     return contactResponse(kind, 400, { ok: false, message: VALIDATION_MESSAGE });

@@ -82,6 +82,24 @@ async function withMockedFetch(mockFetch, callback) {
   }
 }
 
+async function withImmediateTimeout(callback) {
+  const originalSetTimeout = globalThis.setTimeout;
+  const originalClearTimeout = globalThis.clearTimeout;
+
+  globalThis.setTimeout = (handler, _delay, ...args) => {
+    queueMicrotask(() => handler(...args));
+    return 1;
+  };
+  globalThis.clearTimeout = () => {};
+
+  try {
+    await callback({ originalSetTimeout, originalClearTimeout });
+  } finally {
+    globalThis.setTimeout = originalSetTimeout;
+    globalThis.clearTimeout = originalClearTimeout;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // File-existence tests
 // ---------------------------------------------------------------------------
@@ -247,6 +265,24 @@ test("contact endpoint rejects oversized requests before parsing JSON", async ()
   assert.equal(responseBody.ok, false);
 });
 
+test("contact endpoint rejects an oversized body without Content-Length", async () => {
+  const body = JSON.stringify(validContactBody({ message: "a".repeat(12_000) }));
+  const request = new Request("https://example.com/api/contact", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body,
+  });
+
+  assert.equal(request.headers.get("Content-Length"), null);
+
+  const { response, body: responseBody } = await handleContact(request, {
+    CONTACT_MODE: "mock",
+  });
+
+  assert.equal(response.status, 413);
+  assert.equal(responseBody.ok, false);
+});
+
 test("contact endpoint sends email through Resend when enabled", async () => {
   let requestUrl = "";
   let requestInit;
@@ -313,12 +349,68 @@ test("contact endpoint reports failure when Resend rejects the request", async (
   );
 });
 
+test("contact endpoint aborts a stalled Resend request and returns 502", async () => {
+  let resendSignal;
+
+  await withImmediateTimeout(async ({ originalSetTimeout, originalClearTimeout }) => {
+    await withMockedFetch(
+      async (_url, init) => {
+        resendSignal = init.signal;
+        assert.ok(resendSignal instanceof AbortSignal, "Resend fetch must receive an AbortSignal");
+
+        return new Promise((resolve, reject) => {
+          const guard = originalSetTimeout(
+            () => reject(new Error("Resend request was not aborted")),
+            50,
+          );
+          resendSignal.addEventListener(
+            "abort",
+            () => {
+              originalClearTimeout(guard);
+              reject(resendSignal.reason);
+            },
+            { once: true },
+          );
+        });
+      },
+      async () => {
+        const { response, body } = await handleContact(
+          buildRequest("POST", validContactBody()),
+          {
+            CONTACT_MODE: "resend",
+            RESEND_API_KEY: "re_test_key",
+            CONTACT_FROM: "S-Line Seniorenhilfe <kontakt@s-line-seniorenhilfe.de>",
+            CONTACT_TO: "inbox@example.com",
+          },
+        );
+
+        assert.equal(response.status, 502);
+        assert.equal(body.ok, false);
+      },
+    );
+  });
+
+  assert.equal(resendSignal.aborted, true);
+});
+
 // ---------------------------------------------------------------------------
 // Malformed JSON
 // ---------------------------------------------------------------------------
 
 test("contact endpoint rejects malformed JSON with 400", async () => {
   const { response, body } = await handleContact(buildRequest("POST", null));
+  assert.equal(response.status, 400);
+  assert.equal(body.ok, false);
+});
+
+test("contact endpoint rejects a null JSON body with 400", async () => {
+  const request = new Request("https://example.com/api/contact", {
+    method: "POST",
+    headers: JSON_HEADERS,
+    body: "null",
+  });
+
+  const { response, body } = await handleContact(request, { CONTACT_MODE: "mock" });
   assert.equal(response.status, 400);
   assert.equal(body.ok, false);
 });

@@ -206,7 +206,9 @@ textarea {
   inset: 75px 16px auto;
   display: grid;
   gap: 6px;
+  max-height: calc(100dvh - 91px);
   padding: 14px;
+  overflow-y: auto;
   background: #fff;
   border: 1px solid var(--line);
   border-radius: var(--radius);

@@ -31,6 +31,13 @@ test("mobile footer links have a 44px touch target", () => {
   );
 });
 
+test("open mobile navigation scrolls within a short viewport", () => {
+  const openNavigation = css.match(/\.nav\.is-open\s*\{([^}]*)\}/s)?.[1] ?? "";
+
+  assert.match(openNavigation, /max-height:\s*calc\(100dvh - 91px\)/);
+  assert.match(openNavigation, /overflow-y:\s*auto/);
+});
+
 test("desktop footer uses three bounded semantic columns", () => {
   const desktop = css.match(/@media\s*\(min-width:\s*900px\)\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
 

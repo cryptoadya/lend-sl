@@ -35,6 +35,17 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
+const desktopNavigation = window.matchMedia("(min-width: 900px)");
+
+desktopNavigation.addEventListener("change", (event) => {
+  if (event.matches) {
+    nav?.classList.remove("is-open");
+    document.body.classList.remove("nav-open");
+    menuToggle?.setAttribute("aria-expanded", "false");
+    menuToggle?.setAttribute("aria-label", "Menü öffnen");
+  }
+});
+
 const clearReturnContactError = () => {
   phone?.setCustomValidity("");
   email?.setCustomValidity("");

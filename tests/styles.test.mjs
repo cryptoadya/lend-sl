@@ -89,6 +89,12 @@ test("desktop hero scales the headline to its column", () => {
   );
 });
 
+test("desktop contact navigation aligns the two-column block below the header", () => {
+  const desktop = css.match(/@media\s*\(min-width:\s*900px\)\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+
+  assert.match(desktop, /#kontakt\s*\{[^}]*scroll-margin-top:\s*24px/s);
+});
+
 test("mobile hero keeps the headline compact without shrinking buttons", () => {
   const mobile = css.match(/@media\s*\(max-width:\s*619px\)\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
 

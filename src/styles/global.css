@@ -1060,6 +1060,10 @@ h3 {
 }
 
 @media (min-width: 900px) {
+  #kontakt {
+    scroll-margin-top: 24px;
+  }
+
   .menu-toggle {
     display: none;
   }

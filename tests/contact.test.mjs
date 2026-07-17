@@ -24,8 +24,26 @@ function buildRequest(method, body, headers = JSON_HEADERS) {
   });
 }
 
-async function handleContact(request, env = {}) {
-  const response = await onRequest({
+function buildFormRequest(body) {
+  const form = new URLSearchParams();
+
+  for (const [name, value] of Object.entries(body)) {
+    if (name === "privacy") {
+      if (value) form.set(name, "on");
+      continue;
+    }
+    form.set(name, String(value));
+  }
+
+  return new Request("https://example.com/api/contact", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: form,
+  });
+}
+
+async function dispatchContact(request, env = {}) {
+  return onRequest({
     request,
     env,
     params: {},
@@ -34,6 +52,10 @@ async function handleContact(request, env = {}) {
     waitUntil: () => {},
     passThroughOnException: () => {},
   });
+}
+
+async function handleContact(request, env = {}) {
+  const response = await dispatchContact(request, env);
   const body = await response.json();
   return { response, body };
 }
@@ -101,6 +123,86 @@ test("contact endpoint accepts POST", async () => {
   );
   assert.equal(response.status, 200);
   assert.equal(body.ok, true);
+});
+
+test("contact endpoint accepts a native HTML form POST", async () => {
+  const response = await dispatchContact(
+    buildFormRequest(validContactBody()),
+    { CONTACT_MODE: "mock" },
+  );
+
+  assert.equal(response.status, 303);
+  assert.equal(response.headers.get("Location"), "/anfrage-gesendet");
+  assert.equal(response.headers.get("Cache-Control"), "no-store");
+});
+
+test("native HTML form POST uses the production Resend delivery path", async () => {
+  let resendPayload;
+
+  await withMockedFetch(
+    async (_url, init) => {
+      resendPayload = JSON.parse(init.body);
+      return new Response(JSON.stringify({ id: "email_form_test" }), { status: 200 });
+    },
+    async () => {
+      const response = await dispatchContact(
+        buildFormRequest(validContactBody({
+          email: "kunde@example.com",
+          message: "Bitte per Formular zurueckrufen.",
+        })),
+        {
+          CONTACT_MODE: "resend",
+          RESEND_API_KEY: "re_test_key",
+          CONTACT_FROM: "S-Line Seniorenhilfe <kontakt@s-line-seniorenhilfe.de>",
+          CONTACT_TO: "inbox@example.com",
+        },
+      );
+
+      assert.equal(response.status, 303);
+      assert.equal(response.headers.get("Location"), "/anfrage-gesendet");
+    },
+  );
+
+  assert.deepEqual(resendPayload.to, ["inbox@example.com"]);
+  assert.deepEqual(resendPayload.reply_to, ["kunde@example.com"]);
+  assert.match(resendPayload.text, /Bitte per Formular zurueckrufen\./);
+});
+
+test("invalid native HTML form POST redirects without personal data in the URL", async () => {
+  const response = await dispatchContact(
+    buildFormRequest(validContactBody({ phone: "", email: "" })),
+    { CONTACT_MODE: "mock" },
+  );
+
+  assert.equal(response.status, 303);
+  assert.equal(response.headers.get("Location"), "/anfrage-fehler");
+  assert.doesNotMatch(response.headers.get("Location"), /Test|Hallo/);
+});
+
+test("native HTML form honeypot succeeds without sending through Resend", async () => {
+  let fetchCalled = false;
+
+  await withMockedFetch(
+    async () => {
+      fetchCalled = true;
+      return new Response(null, { status: 500 });
+    },
+    async () => {
+      const response = await dispatchContact(
+        buildFormRequest(validContactBody({ website: "https://spam.example" })),
+        {
+          CONTACT_MODE: "resend",
+          RESEND_API_KEY: "re_test_key",
+          CONTACT_FROM: "S-Line Seniorenhilfe <kontakt@s-line-seniorenhilfe.de>",
+          CONTACT_TO: "inbox@example.com",
+        },
+      );
+
+      assert.equal(response.status, 303);
+      assert.equal(response.headers.get("Location"), "/anfrage-gesendet");
+      assert.equal(fetchCalled, false);
+    },
+  );
 });
 
 test("contact endpoint fails closed when production mode is not configured", async () => {

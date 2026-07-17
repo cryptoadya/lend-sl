@@ -12,6 +12,9 @@ export default defineConfig({
   integrations: [
     sitemap({
       filenameBase: "sitemap",
+      filter: (page) =>
+        !page.endsWith("/anfrage-gesendet/") &&
+        !page.endsWith("/anfrage-fehler/"),
       namespaces: {
         news: false,
         xhtml: false,

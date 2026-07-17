@@ -1,0 +1,30 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+
+const title = "Anfrage gesendet | S-Line Seniorenhilfe";
+const description = "Bestätigung Ihrer Anfrage an die S-Line Seniorenhilfe.";
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  path="/anfrage-gesendet"
+  noindex={true}
+>
+  <Header />
+  <main class="result-page section">
+    <section class="result-card" aria-labelledby="result-title">
+      <h1 id="result-title">Vielen Dank für Ihre Anfrage</h1>
+      <p>
+        Ihre Nachricht wurde erfolgreich übermittelt. Wir melden uns zeitnah
+        persönlich bei Ihnen.
+      </p>
+      <div class="result-actions">
+        <a class="btn btn-primary" href="/">Zur Startseite</a>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</BaseLayout>

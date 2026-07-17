@@ -14,6 +14,8 @@ interface ContactBody {
   website?: unknown;
 }
 
+type ContactRequestKind = "json" | "form";
+
 const JSON_HEADERS: HeadersInit = {
   "Content-Type": "application/json; charset=utf-8",
   "Cache-Control": "no-store",
@@ -27,9 +29,31 @@ const MAX_NAME_LENGTH = 100;
 const MAX_CONTACT_LENGTH = 160;
 const MAX_MESSAGE_LENGTH = 4_000;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const JSON_CONTENT_TYPE = "application/json";
+const FORM_CONTENT_TYPE = "application/x-www-form-urlencoded";
+const SUCCESS_PATH = "/anfrage-gesendet";
+const ERROR_PATH = "/anfrage-fehler";
 
 function json(status: number, body: { ok: boolean; message: string }): Response {
   return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
+}
+
+function contactResponse(
+  kind: ContactRequestKind,
+  status: number,
+  body: { ok: boolean; message: string },
+): Response {
+  if (kind === "form") {
+    return new Response(null, {
+      status: 303,
+      headers: {
+        Location: status >= 200 && status < 300 ? SUCCESS_PATH : ERROR_PATH,
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+
+  return json(status, body);
 }
 
 function buildContactEmail({
@@ -114,20 +138,37 @@ async function sendWithResend({
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   let body: ContactBody;
 
+  const contentType = (request.headers.get("Content-Type") ?? "")
+    .split(";", 1)[0]
+    .trim()
+    .toLowerCase();
+  const kind: ContactRequestKind = contentType === FORM_CONTENT_TYPE ? "form" : "json";
+
   const contentLength = Number(request.headers.get("Content-Length") ?? "0");
   if (Number.isFinite(contentLength) && contentLength > MAX_CONTENT_LENGTH) {
-    return json(413, { ok: false, message: VALIDATION_MESSAGE });
+    return contactResponse(kind, 413, { ok: false, message: VALIDATION_MESSAGE });
   }
 
-  const contentType = request.headers.get("Content-Type") ?? "";
-  if (!contentType.toLowerCase().includes("application/json")) {
+  if (contentType !== JSON_CONTENT_TYPE && contentType !== FORM_CONTENT_TYPE) {
     return json(400, { ok: false, message: VALIDATION_MESSAGE });
   }
 
   try {
-    body = (await request.json()) as ContactBody;
+    if (kind === "form") {
+      const formData = await request.formData();
+      body = {
+        name: formData.get("name"),
+        phone: formData.get("phone"),
+        email: formData.get("email"),
+        message: formData.get("message"),
+        privacy: formData.get("privacy") === "on",
+        website: formData.get("website"),
+      };
+    } else {
+      body = (await request.json()) as ContactBody;
+    }
   } catch {
-    return json(400, { ok: false, message: VALIDATION_MESSAGE });
+    return contactResponse(kind, 400, { ok: false, message: VALIDATION_MESSAGE });
   }
 
   const name = String(body.name ?? "").trim();
@@ -139,12 +180,12 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
   // Honeypot: silently succeed without logging content
   if (website) {
-    return json(200, { ok: true, message: SUCCESS_MESSAGE });
+    return contactResponse(kind, 200, { ok: true, message: SUCCESS_MESSAGE });
   }
 
   // Validation
   if (!name || !message || (!phone && !email) || privacy !== true) {
-    return json(400, { ok: false, message: VALIDATION_MESSAGE });
+    return contactResponse(kind, 400, { ok: false, message: VALIDATION_MESSAGE });
   }
 
   if (
@@ -153,20 +194,20 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     email.length > MAX_CONTACT_LENGTH ||
     message.length > MAX_MESSAGE_LENGTH
   ) {
-    return json(400, { ok: false, message: VALIDATION_MESSAGE });
+    return contactResponse(kind, 400, { ok: false, message: VALIDATION_MESSAGE });
   }
 
   if (email && !EMAIL_PATTERN.test(email)) {
-    return json(400, { ok: false, message: VALIDATION_MESSAGE });
+    return contactResponse(kind, 400, { ok: false, message: VALIDATION_MESSAGE });
   }
 
   if (env.CONTACT_MODE === "resend") {
     const sent = await sendWithResend({ env, name, phone, email, message });
     if (!sent) {
-      return json(502, { ok: false, message: ERROR_MESSAGE });
+      return contactResponse(kind, 502, { ok: false, message: ERROR_MESSAGE });
     }
 
-    return json(200, { ok: true, message: SUCCESS_MESSAGE });
+    return contactResponse(kind, 200, { ok: true, message: SUCCESS_MESSAGE });
   }
 
   if (env.CONTACT_MODE === "mock") {
@@ -175,11 +216,11 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       `[contact mock] accepted request: namePresent=true phonePresent=${Boolean(phone)} emailPresent=${Boolean(email)} messageLength=${message.length}`,
     );
 
-    return json(200, { ok: true, message: SUCCESS_MESSAGE });
+    return contactResponse(kind, 200, { ok: true, message: SUCCESS_MESSAGE });
   }
 
   console.error("[contact] invalid CONTACT_MODE configuration");
-  return json(503, { ok: false, message: ERROR_MESSAGE });
+  return contactResponse(kind, 503, { ok: false, message: ERROR_MESSAGE });
 };
 
 // Reject all non-POST methods

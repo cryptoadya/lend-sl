@@ -152,6 +152,40 @@ test("the contact form requires a phone number or email address", async () => {
   assert.match(script, /contactForm\.reportValidity\(\)/);
 });
 
+test("the contact form has a native POST fallback", async () => {
+  const contact = await readProjectFile("src/components/ContactCTA.astro");
+  const formTag = contact.match(/<form[^>]*data-contact-form[^>]*>/)?.[0] ?? "";
+
+  assert.match(formTag, /method="post"/);
+  assert.match(formTag, /action="\/api\/contact"/);
+  assert.doesNotMatch(formTag, /novalidate/);
+});
+
+test("native contact submissions have safe result pages", async () => {
+  const [success, error] = await Promise.all([
+    readProjectFile("src/pages/anfrage-gesendet.astro").catch(() => ""),
+    readProjectFile("src/pages/anfrage-fehler.astro").catch(() => ""),
+  ]);
+
+  assert.match(success, /noindex=\{true\}/);
+  assert.match(success, /Vielen Dank für Ihre Anfrage/);
+  assert.match(success, /Ihre Nachricht wurde erfolgreich übermittelt/);
+  assert.match(error, /noindex=\{true\}/);
+  assert.match(error, /Ihre Anfrage konnte nicht gesendet werden/);
+  assert.match(error, /href="\/#kontakt"/);
+  assert.match(error, /tel:\+491732126091/);
+  assert.match(error, /mailto:info@s-line-seniorenhilfe\.de/);
+  assert.doesNotMatch(`${success}\n${error}`, /Astro\.url\.searchParams/);
+});
+
+test("native contact result pages are excluded from the sitemap", async () => {
+  const config = await readProjectFile("astro.config.mjs");
+
+  assert.match(config, /filter:\s*\(page\)\s*=>/);
+  assert.match(config, /anfrage-gesendet/);
+  assert.match(config, /anfrage-fehler/);
+});
+
 test("benefit and service copy stays concrete without overpromising", async () => {
   const [hero, services] = await Promise.all([
     readProjectFile("src/components/Hero.astro"),

@@ -186,6 +186,17 @@ test("native contact result pages are excluded from the sitemap", async () => {
   assert.match(config, /anfrage-fehler/);
 });
 
+test("the custom 404 page is noindex and offers recovery links", async () => {
+  const notFound = await readProjectFile("src/pages/404.astro").catch(() => "");
+
+  assert.match(notFound, /noindex=\{true\}/);
+  assert.match(notFound, /path="\/404"/);
+  assert.match(notFound, /Seite nicht gefunden/);
+  assert.match(notFound, /href="\/"/);
+  assert.match(notFound, /href="\/#kontakt"/);
+  assert.doesNotMatch(notFound, /Astro\.url/);
+});
+
 test("benefit and service copy stays concrete without overpromising", async () => {
   const [hero, services] = await Promise.all([
     readProjectFile("src/components/Hero.astro"),

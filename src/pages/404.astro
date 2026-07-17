@@ -1,0 +1,26 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+
+const title = "Seite nicht gefunden | S-Line Seniorenhilfe";
+const description = "Die angeforderte Seite wurde nicht gefunden.";
+---
+
+<BaseLayout title={title} description={description} path="/404" noindex={true}>
+  <Header />
+  <main class="result-page section">
+    <section class="result-card" aria-labelledby="not-found-title">
+      <h1 id="not-found-title">Seite nicht gefunden</h1>
+      <p>
+        Die aufgerufene Seite existiert nicht oder wurde verschoben. Über die
+        Startseite finden Sie unsere Leistungen und Kontaktmöglichkeiten.
+      </p>
+      <div class="result-actions">
+        <a class="btn btn-primary" href="/">Zur Startseite</a>
+        <a class="btn btn-secondary" href="/#kontakt">Kontakt aufnehmen</a>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</BaseLayout>

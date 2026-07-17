@@ -2,8 +2,11 @@ const header = document.querySelector("[data-header]");
 const menuToggle = document.querySelector(".menu-toggle");
 const nav = document.querySelector("#primary-nav");
 const contactForm = document.querySelector("[data-contact-form]");
+const nameInput = contactForm?.querySelector('[name="name"]');
 const phone = contactForm?.querySelector('[name="phone"]');
 const email = contactForm?.querySelector('[name="email"]');
+const messageInput = contactForm?.querySelector('[name="message"]');
+const privacyInput = contactForm?.querySelector('[name="privacy"]');
 const contactError = contactForm?.querySelector("[data-contact-error]");
 
 menuToggle?.addEventListener("click", () => {
@@ -57,6 +60,14 @@ const clearReturnContactError = () => {
 phone?.addEventListener("input", clearReturnContactError);
 email?.addEventListener("input", clearReturnContactError);
 
+const clearFieldValidity = (event) => {
+  event.currentTarget.setCustomValidity("");
+};
+
+nameInput?.addEventListener("input", clearFieldValidity);
+messageInput?.addEventListener("input", clearFieldValidity);
+privacyInput?.addEventListener("change", clearFieldValidity);
+
 let contactSubmitting = false;
 
 contactForm?.addEventListener("submit", async (event) => {
@@ -92,43 +103,27 @@ contactForm?.addEventListener("submit", async (event) => {
     }
   };
 
-  // Client-side: phone or email required
+  clearStatus();
+
+  nameInput?.setCustomValidity(name ? "" : "Bitte geben Sie Ihren Namen an.");
+  messageInput?.setCustomValidity(message ? "" : "Bitte geben Sie eine Nachricht ein.");
+  privacyInput?.setCustomValidity(
+    privacyChecked ? "" : "Bitte bestätigen Sie die Datenschutzerklärung.",
+  );
+
   if (!phoneValue && !emailValue) {
     const errorMessage = "Bitte geben Sie eine Telefonnummer oder E-Mail-Adresse an.";
     phone.setCustomValidity(errorMessage);
     email.setCustomValidity(errorMessage);
     contactError.hidden = false;
-    phone.focus();
-    phone.reportValidity();
-    return;
+  } else {
+    clearReturnContactError();
   }
 
-  // Client-side: name required
-  if (!name) {
-    const nameInput = contactForm.querySelector('[name="name"]');
-    nameInput?.setCustomValidity("Bitte geben Sie Ihren Namen an.");
-    nameInput?.reportValidity();
+  if (!contactForm.checkValidity()) {
+    contactForm.reportValidity();
     return;
   }
-
-  // Client-side: message required
-  if (!message) {
-    const messageInput = contactForm.querySelector('[name="message"]');
-    messageInput?.setCustomValidity("Bitte geben Sie eine Nachricht ein.");
-    messageInput?.reportValidity();
-    return;
-  }
-
-  // Client-side: privacy required
-  if (!privacyChecked) {
-    const privacyInput = contactForm.querySelector('[name="privacy"]');
-    privacyInput?.setCustomValidity("Bitte bestätigen Sie die Datenschutzerklärung.");
-    privacyInput?.reportValidity();
-    return;
-  }
-
-  clearReturnContactError();
-  clearStatus();
 
   // Disable button and guard against double-submit
   contactSubmitting = true;

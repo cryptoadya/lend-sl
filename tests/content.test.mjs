@@ -148,7 +148,8 @@ test("the contact form requires a phone number or email address", async () => {
   assert.match(script, /email\.setCustomValidity/);
   assert.match(script, /if \(!phoneValue && !emailValue\)/);
   assert.match(script, /contactError\.hidden = false/);
-  assert.match(script, /phone\.focus\(\)/);
+  assert.match(script, /if \(!contactForm\.checkValidity\(\)\)/);
+  assert.match(script, /contactForm\.reportValidity\(\)/);
 });
 
 test("benefit and service copy stays concrete without overpromising", async () => {

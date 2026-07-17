@@ -6,6 +6,7 @@
   --text: #173728;
   --muted: #65746c;
   --line: #e5ddd0;
+  --field-border: #87958d;
   --teal: #3f7d3b;
   --teal-dark: #153f2a;
   --teal-soft: #eaf4e7;
@@ -803,11 +804,14 @@ h3 {
 .contact-form input:not([type="checkbox"]),
 .contact-form textarea {
   width: 100%;
-  border: 1px solid var(--line);
+  border: 1px solid var(--field-border);
   border-radius: var(--radius);
   color: var(--text);
   background: #fff;
   outline: none;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .contact-form input:not([type="checkbox"]) {
@@ -823,13 +827,14 @@ h3 {
 
 .contact-form input:not([type="checkbox"]):focus,
 .contact-form textarea:focus {
-  border-color: var(--teal);
-  box-shadow: 0 0 0 4px rgba(8, 127, 118, 0.12);
+  border-color: var(--accent-dark);
+  box-shadow: 0 0 0 4px rgba(40, 93, 44, 0.16);
 }
 
 .contact-form input:not([type="checkbox"]):focus-visible,
 .contact-form textarea:focus-visible {
-  outline: none;
+  outline: 3px solid var(--accent-dark);
+  outline-offset: 2px;
 }
 
 .privacy-check {

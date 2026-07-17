@@ -4,6 +4,25 @@ import test from "node:test";
 
 const css = await readFile(new URL("../src/styles/global.css", import.meta.url), "utf8");
 
+const relativeLuminance = (hex) => {
+  const channels = hex
+    .slice(1)
+    .match(/.{2}/g)
+    .map((channel) => Number.parseInt(channel, 16) / 255)
+    .map((channel) =>
+      channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
+    );
+
+  return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+};
+
+const contrastRatio = (first, second) => {
+  const lighter = Math.max(relativeLuminance(first), relativeLuminance(second));
+  const darker = Math.min(relativeLuminance(first), relativeLuminance(second));
+
+  return (lighter + 0.05) / (darker + 0.05);
+};
+
 test("all anchored sections clear the sticky header", () => {
   assert.match(
     css,
@@ -95,4 +114,30 @@ test("tablet contact form uses semantic full-width rows", () => {
   );
   assert.match(tablet, /grid-column:\s*1\s*\/\s*-1/);
   assert.doesNotMatch(tablet, /\.contact-form label:nth-child/);
+});
+
+test("contact fields keep a visible boundary and keyboard focus indicator", () => {
+  const fieldBorder = css.match(/--field-border:\s*(#[0-9a-f]{6})/i)?.[1];
+  const fields =
+    css.match(
+      /\.contact-form input:not\(\[type="checkbox"\]\),\s*\.contact-form textarea\s*\{([^}]*)\}/s,
+    )?.[1] ?? "";
+  const focus =
+    css.match(
+      /\.contact-form input:not\(\[type="checkbox"\]\):focus,\s*\.contact-form textarea:focus\s*\{([^}]*)\}/s,
+    )?.[1] ?? "";
+  const focusVisible =
+    css.match(
+      /\.contact-form input:not\(\[type="checkbox"\]\):focus-visible,\s*\.contact-form textarea:focus-visible\s*\{([^}]*)\}/s,
+    )?.[1] ?? "";
+
+  assert.ok(fieldBorder, "the contact field border color should be explicit");
+  assert.ok(
+    contrastRatio(fieldBorder, "#ffffff") >= 3,
+    "the field boundary should have at least 3:1 contrast against white",
+  );
+  assert.match(fields, /border:\s*1px solid var\(--field-border\)/);
+  assert.match(focus, /border-color:\s*var\(--accent-dark\)/);
+  assert.match(focusVisible, /outline:\s*3px solid var\(--accent-dark\)/);
+  assert.match(focusVisible, /outline-offset:\s*2px/);
 });

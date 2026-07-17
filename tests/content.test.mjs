@@ -161,6 +161,19 @@ test("the contact form has a native POST fallback", async () => {
   assert.doesNotMatch(formTag, /novalidate/);
 });
 
+test("the primary inquiry CTA targets the form while contact navigation targets the section", async () => {
+  const [hero, contact, header] = await Promise.all([
+    readProjectFile("src/components/Hero.astro"),
+    readProjectFile("src/components/ContactCTA.astro"),
+    readProjectFile("src/components/Header.astro"),
+  ]);
+  const formTag = contact.match(/<form[^>]*data-contact-form[^>]*>/)?.[0] ?? "";
+
+  assert.match(hero, /href="#kontaktformular"/);
+  assert.match(formTag, /id="kontaktformular"/);
+  assert.match(header, /href="\/#kontakt">Kontakt<\/a>/);
+});
+
 test("native contact submissions have safe result pages", async () => {
   const [success, error] = await Promise.all([
     readProjectFile("src/pages/anfrage-gesendet.astro").catch(() => ""),

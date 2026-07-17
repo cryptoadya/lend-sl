@@ -26,7 +26,7 @@ const contrastRatio = (first, second) => {
 test("all anchored sections clear the sticky header", () => {
   assert.match(
     css,
-    /#top,\s*#leistungen,\s*#ablauf,\s*#preis,\s*#gebiet,\s*#kontakt\s*\{[^}]*scroll-margin-top:\s*92px/s,
+    /#top,\s*#leistungen,\s*#ablauf,\s*#preis,\s*#gebiet,\s*#kontakt,\s*#kontaktformular\s*\{[^}]*scroll-margin-top:\s*92px/s,
   );
 });
 

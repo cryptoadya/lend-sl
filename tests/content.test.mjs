@@ -210,6 +210,33 @@ test("the custom 404 page is noindex and offers recovery links", async () => {
   assert.doesNotMatch(notFound, /Astro\.url/);
 });
 
+test("every page receives the S-Line favicon assets from the shared layout", async () => {
+  const [layout, svg, png32, appleTouch] = await Promise.all([
+    readProjectFile("src/layouts/BaseLayout.astro"),
+    readProjectFile("public/favicon.svg"),
+    readFile(new URL("../public/favicon-32x32.png", import.meta.url)),
+    readFile(new URL("../public/apple-touch-icon.png", import.meta.url)),
+  ]);
+
+  assert.match(
+    layout,
+    /<link rel="icon" href="\/favicon\.svg" type="image\/svg\+xml"\s*\/>/,
+  );
+  assert.match(
+    layout,
+    /<link rel="icon" href="\/favicon-32x32\.png" type="image\/png" sizes="32x32"\s*\/>/,
+  );
+  assert.match(
+    layout,
+    /<link rel="apple-touch-icon" href="\/apple-touch-icon\.png" sizes="180x180"\s*\/>/,
+  );
+  assert.match(svg, /viewBox="0 0 512 512"/);
+  assert.match(svg, /#EAF4E7/);
+  assert.match(svg, /#285D2C/);
+  assert.ok(png32.byteLength > 0);
+  assert.ok(appleTouch.byteLength > 0);
+});
+
 test("benefit and service copy stays concrete without overpromising", async () => {
   const [hero, services] = await Promise.all([
     readProjectFile("src/components/Hero.astro"),

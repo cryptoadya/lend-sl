@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">S-Line Seniorenhilfe – Haus mit Herz</title>
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="#EAF4E7" />
+  <path
+    d="M112 238 256 112l144 126v154c0 10-8 18-18 18H130c-10 0-18-8-18-18V238Z"
+    fill="none"
+    stroke="#285D2C"
+    stroke-width="34"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M256 365s-86-45-86-105c0-32 23-55 53-55 16 0 28 7 33 20 5-13 17-20 33-20 30 0 53 23 53 55 0 60-86 105-86 105Z"
+    fill="#285D2C"
+  />
+</svg>

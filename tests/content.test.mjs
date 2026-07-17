@@ -76,6 +76,16 @@ test("security headers are configured for Cloudflare Pages", async () => {
   assert.match(headers, /Permissions-Policy:/);
 });
 
+test("Cloudflare preview keeps contact delivery in mock mode", async () => {
+  const config = await readProjectFile("wrangler.toml");
+  const productionVars = config.match(/\[vars\]([\s\S]*?)(?=\n\[|$)/)?.[1] ?? "";
+  const previewVars =
+    config.match(/\[env\.preview\.vars\]([\s\S]*?)(?=\n\[|$)/)?.[1] ?? "";
+
+  assert.match(productionVars, /CONTACT_MODE\s*=\s*"resend"/);
+  assert.match(previewVars, /CONTACT_MODE\s*=\s*"mock"/);
+});
+
 test("the landing page follows the requested content structure", async () => {
   const [index, hero, process, contact, footer] = await Promise.all([
     readProjectFile("src/pages/index.astro"),

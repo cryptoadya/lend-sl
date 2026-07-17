@@ -6,3 +6,6 @@ pages_build_output_dir = "dist"
 CONTACT_MODE = "resend"
 CONTACT_FROM = "S-Line Seniorenhilfe <kontakt@s-line-seniorenhilfe.de>"
 CONTACT_TO = "info@s-line-seniorenhilfe.de"
+
+[env.preview.vars]
+CONTACT_MODE = "mock"

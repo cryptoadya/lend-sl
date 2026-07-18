@@ -24,7 +24,7 @@ function buildRequest(method, body, headers = JSON_HEADERS) {
   });
 }
 
-function buildFormRequest(body) {
+function buildFormRequest(body, headers = {}) {
   const form = new URLSearchParams();
 
   for (const [name, value] of Object.entries(body)) {
@@ -37,7 +37,10 @@ function buildFormRequest(body) {
 
   return new Request("https://example.com/api/contact", {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      ...headers,
+    },
     body: form,
   });
 }
@@ -154,6 +157,69 @@ test("contact endpoint accepts a native HTML form POST", async () => {
   assert.equal(response.headers.get("Cache-Control"), "no-store");
 });
 
+test("contact endpoint accepts an explicitly same-origin native form POST", async () => {
+  const response = await dispatchContact(
+    buildFormRequest(validContactBody(), {
+      Origin: "https://example.com",
+      "Sec-Fetch-Site": "same-origin",
+    }),
+    { CONTACT_MODE: "mock" },
+  );
+
+  assert.equal(response.status, 303);
+  assert.equal(response.headers.get("Location"), "/anfrage-gesendet");
+});
+
+test("contact endpoint accepts a maximum-length multibyte JSON message", async () => {
+  const { response, body } = await handleContact(
+    buildRequest("POST", validContactBody({ message: "漢".repeat(4_000) })),
+    { CONTACT_MODE: "mock" },
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(body.ok, true);
+});
+
+test("contact endpoint accepts a maximum-length multibyte native form message", async () => {
+  const response = await dispatchContact(
+    buildFormRequest(validContactBody({ message: "漢".repeat(4_000) })),
+    { CONTACT_MODE: "mock" },
+  );
+
+  assert.equal(response.status, 303);
+  assert.equal(response.headers.get("Location"), "/anfrage-gesendet");
+});
+
+test("contact endpoint rejects cross-site native form submissions before delivery", async () => {
+  let fetchCalled = false;
+
+  await withMockedFetch(
+    async () => {
+      fetchCalled = true;
+      return new Response(JSON.stringify({ id: "email_cross_site_test" }), { status: 200 });
+    },
+    async () => {
+      const response = await dispatchContact(
+        buildFormRequest(validContactBody(), {
+          Origin: "https://attacker.example",
+          "Sec-Fetch-Site": "cross-site",
+        }),
+        {
+          CONTACT_MODE: "resend",
+          RESEND_API_KEY: "re_test_key",
+          CONTACT_FROM: "S-Line Seniorenhilfe <kontakt@s-line-seniorenhilfe.de>",
+          CONTACT_TO: "inbox@example.com",
+        },
+      );
+
+      assert.equal(response.status, 303);
+      assert.equal(response.headers.get("Location"), "/anfrage-fehler");
+    },
+  );
+
+  assert.equal(fetchCalled, false);
+});
+
 test("native HTML form POST uses the production Resend delivery path", async () => {
   let resendPayload;
 
@@ -244,7 +310,7 @@ test("contact endpoint fails closed when production mode is not configured", asy
 });
 
 test("contact endpoint rejects oversized requests before parsing JSON", async () => {
-  const body = JSON.stringify(validContactBody({ message: "a".repeat(12_000) }));
+  const body = JSON.stringify(validContactBody({ message: "a".repeat(70_000) }));
   const request = new Request("https://example.com/api/contact", {
     method: "POST",
     headers: {
@@ -266,7 +332,7 @@ test("contact endpoint rejects oversized requests before parsing JSON", async ()
 });
 
 test("contact endpoint rejects an oversized body without Content-Length", async () => {
-  const body = JSON.stringify(validContactBody({ message: "a".repeat(12_000) }));
+  const body = JSON.stringify(validContactBody({ message: "a".repeat(70_000) }));
   const request = new Request("https://example.com/api/contact", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -327,6 +393,39 @@ test("contact endpoint sends email through Resend when enabled", async () => {
   assert.match(payload.text, /Telefon: 0173000000/);
   assert.match(payload.text, /E-Mail: kunde@example.com/);
   assert.match(payload.text, /Bitte um Rueckruf\./);
+});
+
+test("contact endpoint removes line breaks from the Resend subject", async () => {
+  let resendPayload;
+
+  await withMockedFetch(
+    async (_url, init) => {
+      resendPayload = JSON.parse(init.body);
+      return new Response(JSON.stringify({ id: "email_subject_test" }), { status: 200 });
+    },
+    async () => {
+      const { response, body } = await handleContact(
+        buildRequest("POST", validContactBody({
+          name: "Test\r\nBcc: fremd@example.com",
+        })),
+        {
+          CONTACT_MODE: "resend",
+          RESEND_API_KEY: "re_test_key",
+          CONTACT_FROM: "S-Line Seniorenhilfe <kontakt@s-line-seniorenhilfe.de>",
+          CONTACT_TO: "inbox@example.com",
+        },
+      );
+
+      assert.equal(response.status, 200);
+      assert.equal(body.ok, true);
+    },
+  );
+
+  assert.equal(
+    resendPayload.subject,
+    "Neue Anfrage von Test Bcc: fremd@example.com",
+  );
+  assert.doesNotMatch(resendPayload.subject, /[\r\n]/);
 });
 
 test("contact endpoint reports failure when Resend rejects the request", async () => {

@@ -185,7 +185,7 @@ test("native contact submissions have safe result pages", async () => {
   assert.match(success, /Ihre Nachricht wurde erfolgreich übermittelt/);
   assert.match(error, /noindex=\{true\}/);
   assert.match(error, /Ihre Anfrage konnte nicht gesendet werden/);
-  assert.match(error, /href="\/#kontakt"/);
+  assert.match(error, /href="\/#kontaktformular"/);
   assert.match(error, /tel:\+491732126091/);
   assert.match(error, /mailto:info@s-line-seniorenhilfe\.de/);
   assert.doesNotMatch(`${success}\n${error}`, /Astro\.url\.searchParams/);

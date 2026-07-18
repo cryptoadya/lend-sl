@@ -24,7 +24,7 @@ const JSON_HEADERS: HeadersInit = {
 const SUCCESS_MESSAGE = "Vielen Dank. Wir melden uns zeitnah bei Ihnen.";
 const ERROR_MESSAGE = "Ihre Anfrage konnte gerade nicht gesendet werden.";
 const VALIDATION_MESSAGE = "Bitte prüfen Sie Ihre Angaben.";
-const MAX_CONTENT_LENGTH = 10_000;
+const MAX_CONTENT_LENGTH = 65_536;
 const RESEND_TIMEOUT_MS = 8_000;
 const MAX_NAME_LENGTH = 100;
 const MAX_CONTACT_LENGTH = 160;
@@ -37,6 +37,31 @@ const ERROR_PATH = "/anfrage-fehler";
 
 function isContactBody(value: unknown): value is ContactBody {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isCrossSiteRequest(request: Request): boolean {
+  const fetchSite = request.headers.get("Sec-Fetch-Site")?.trim().toLowerCase();
+  if (fetchSite === "cross-site") {
+    return true;
+  }
+
+  const origin = request.headers.get("Origin");
+  if (!origin) {
+    return false;
+  }
+
+  try {
+    return new URL(origin).origin !== new URL(request.url).origin;
+  } catch {
+    return true;
+  }
+}
+
+function sanitizeSubjectText(value: string): string {
+  return value
+    .replace(/[\u0000-\u001f\u007f]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 async function readBodyWithLimit(
@@ -149,7 +174,7 @@ async function sendWithResend({
   } = {
     from,
     to: [to],
-    subject: `Neue Anfrage von ${name}`,
+    subject: `Neue Anfrage von ${sanitizeSubjectText(name)}`,
     text: buildContactEmail({ name, phone, email, message }),
   };
 
@@ -198,6 +223,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     .trim()
     .toLowerCase();
   const kind: ContactRequestKind = contentType === FORM_CONTENT_TYPE ? "form" : "json";
+
+  if (isCrossSiteRequest(request)) {
+    return contactResponse(kind, 403, { ok: false, message: VALIDATION_MESSAGE });
+  }
 
   const contentLength = Number(request.headers.get("Content-Length") ?? "0");
   if (Number.isFinite(contentLength) && contentLength > MAX_CONTENT_LENGTH) {
